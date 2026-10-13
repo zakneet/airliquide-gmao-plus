@@ -5,7 +5,7 @@ from rest_framework.response import Response
 
 from accounts.permissions import IsResponsableOrReadOnly
 from maintenance.models import StatusHistory
-from maintenance.serializers import DossierSerializer, StatusHistorySerializer
+from maintenance.serializers import DossierDetailSerializer, StatusHistorySerializer
 
 from .models import Brand, Device, DeviceModel, DeviceType
 from .serializers import (BrandSerializer, DeviceModelSerializer, DeviceSerializer,
@@ -50,6 +50,6 @@ class DeviceViewSet(viewsets.ReadOnlyModelViewSet):
         timeline = StatusHistory.objects.filter(dossier__device=device).select_related('user')
         return Response({
             'device': DeviceSerializer(device).data,
-            'dossiers': DossierSerializer(dossiers, many=True).data,
+            'dossiers': DossierDetailSerializer(dossiers, many=True).data,
             'timeline': StatusHistorySerializer(timeline, many=True).data,
         })
