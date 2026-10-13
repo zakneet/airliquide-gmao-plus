@@ -263,3 +263,17 @@ Cette base permet d'ajouter sans modification majeure :
 - Pièces détachées
 - Gestion multi-sites
 - Gestion multi-pays
+
+---
+
+# Mise à jour (étape 2) : Appareil vs Dossier SAV
+
+Le modèle implémenté sépare l'appareil physique de ses retours :
+
+- `Device` (app `inventory`) : une seule fiche par numéro de série (normalisé en majuscules, sans espaces), code interne `APP-000001`.
+- `DossierSAV` (app `maintenance`) : un retour SAV (`SAV-2026-00001`). Un seul dossier ouvert par appareil (contrainte en base).
+- `StatusHistory` : journal immuable (utilisateur, date/heure, ancien/nouveau statut, commentaire).
+
+Statuts, dans l'ordre : `RECU → DESINFECTE → DIAGNOSTIC_TERMINE → REPARE → QC_VALIDE → EN_STOCK → LIVRE`.
+Seule l'avancée d'une étape est permise ; le retour d'une étape est réservé au Responsable SAV avec commentaire obligatoire.
+Hypothèse provisoire : les prérequis métier de chaque transition (désinfection renseignée, QC validé, etc.) seront ajoutés avec les étapes 4 à 8.
