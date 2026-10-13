@@ -48,6 +48,8 @@ INSTALLED_APPS = [
     'accounts',
     'inventory',
     'maintenance',
+    'dashboard',
+    'reports',
 ]
 
 MIDDLEWARE = [
@@ -158,3 +160,7 @@ SIMPLE_JWT = {
 
 SPECTACULAR_SETTINGS = {'TITLE': 'AirLiquide GMAO+ API', 'VERSION': '0.1.0'}
 
+
+MEDIA_URL = 'media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+DATA_UPLOAD_MAX_MEMORY_SIZE = 6 * 1024 * 1024
