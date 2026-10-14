@@ -89,7 +89,7 @@ export default function ReturnsPage() {
                 </p>
               </div>
               {r.received ? (
-                <Link href={`/dossiers/${r.dossier_id}`} className="text-sm font-medium text-primary hover:underline">Réceptionné</Link>
+                <Link href={`/dossiers/${r.dossier_id}`} className="text-sm font-medium text-link hover:underline">Réceptionné</Link>
               ) : (
                 <Link href={`/reception?return=${r.id}`}
                   className="inline-flex h-11 items-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground">

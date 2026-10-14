@@ -69,7 +69,12 @@ export async function api<T = unknown>(path: string, init: RequestInit & { json?
     headers.set("Content-Type", "application/json");
     body = JSON.stringify(init.json);
   }
-  const res = await fetch(`${BASE}${path}`, { ...init, headers, body, credentials: "include" });
+  let res: Response;
+  try {
+    res = await fetch(`${BASE}${path}`, { ...init, headers, body, credentials: "include" });
+  } catch {
+    throw new ApiError(0, "Impossible de joindre le serveur. Vérifiez que le backend est démarré.");
+  }
   if (res.status === 401 && retry && (await refresh())) return api<T>(path, init, false);
   if (res.status === 401) {
     accessToken = null;
@@ -77,7 +82,13 @@ export async function api<T = unknown>(path: string, init: RequestInit & { json?
   }
   if (res.status === 204) return undefined as T;
   const data = await res.json().catch(() => null);
-  if (!res.ok) throw new ApiError(res.status, data);
+  if (!res.ok) {
+    if (data === null || res.status >= 500) {
+      throw new ApiError(res.status,
+        `Le serveur a rencontré une erreur (code ${res.status}). Si elle persiste, vérifiez que les migrations de la base sont appliquées.`);
+    }
+    throw new ApiError(res.status, data);
+  }
   return data as T;
 }
 
@@ -91,4 +102,14 @@ export async function downloadCsv(path: string, filename: string) {
   const a = document.createElement("a");
   a.href = url; a.download = filename; a.click();
   URL.revokeObjectURL(url);
+}
+
+/** Les médias sont servis par l'API : on préfixe son origine. */
+export function mediaUrl(path: string) {
+  if (/^https?:/.test(path)) return path;
+  try {
+    return new URL(BASE).origin + path;
+  } catch {
+    return path;
+  }
 }

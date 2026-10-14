@@ -28,12 +28,29 @@ export function Card({ title, children, action, className }:
   );
 }
 
-export function PageTitle({ children, sub }: { children: ReactNode; sub?: ReactNode }) {
+export function PageTitle({ children, sub, actions }:
+  { children: ReactNode; sub?: ReactNode; actions?: ReactNode }) {
   return (
-    <header>
-      <h1 className="text-2xl font-semibold">{children}</h1>
-      {sub && <p className="mt-1 text-sm text-muted-foreground">{sub}</p>}
+    <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3 pb-1">
+      <div className="min-w-0">
+        <h1 className="text-[1.75rem] font-semibold leading-tight">{children}</h1>
+        {sub && <p className="mt-1 max-w-[65ch] text-sm text-muted-foreground">{sub}</p>}
+      </div>
+      {actions && <div className="flex gap-2">{actions}</div>}
     </header>
+  );
+}
+
+export function Skeleton({ className }: { className?: string }) {
+  return <div aria-hidden className={cn("skeleton", className)} />;
+}
+
+/** Lignes de chargement : mêmes dimensions que le contenu pour éviter tout saut de mise en page. */
+export function ListSkeleton({ rows = 5 }: { rows?: number }) {
+  return (
+    <div role="status" aria-label="Chargement" className="space-y-3">
+      {Array.from({ length: rows }, (_, i) => <Skeleton key={i} className="h-12 w-full" />)}
+    </div>
   );
 }
 
@@ -64,10 +81,10 @@ export function Field({ label, children }: { label: string; children: ReactNode 
 }
 
 export const Input = ({ className, ...p }: React.ComponentProps<"input">) =>
-  <ShInput {...p} className={cn("h-11 text-base sm:text-sm", className)} />;
+  <ShInput {...p} className={cn("h-11 bg-card text-base sm:text-sm", className)} />;
 
 export const Textarea = ({ className, ...p }: React.ComponentProps<"textarea">) =>
-  <ShTextarea rows={3} {...p} className={cn("text-base sm:text-sm", className)} />;
+  <ShTextarea rows={3} {...p} className={cn("bg-card text-base sm:text-sm", className)} />;
 
 export const Select = ({ className, ...p }: React.ComponentProps<"select">) => (
   <select
@@ -104,7 +121,7 @@ export function RadioTiles({ legend, name, options, value, onChange, disabled, c
             key={o.value}
             className={cn(
               "flex min-h-11 cursor-pointer items-center gap-2.5 rounded-lg border px-3 text-sm transition-colors",
-              "has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-ring",
+              "has-[input:focus-visible]:outline-2 has-[input:focus-visible]:outline-offset-2 has-[input:focus-visible]:outline-ring",
               value === o.value ? "border-primary bg-accent font-medium text-accent-foreground" : "border-input bg-card hover:bg-muted",
               disabled && "cursor-not-allowed opacity-60",
             )}
@@ -190,5 +207,10 @@ export function useLoad<T>(loader: () => Promise<T>, deps: unknown[] = []) {
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [...deps, tick]);
-  return { data, error, reload: () => setTick((t) => t + 1) };
+  return { data, error, loading: data === null && error === null, reload: () => setTick((t) => t + 1) };
+}
+
+/** Ancienneté en heures (fonction pure vis-à-vis du rendu : l'horloge est lue ici). */
+export function ageHours(d: string) {
+  return (Date.now() - new Date(d).getTime()) / 3_600_000;
 }
