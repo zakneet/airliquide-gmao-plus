@@ -51,7 +51,7 @@ function List() {
             {rows.map((d) => (
               <tr key={d.id} className="border-b border-border last:border-0 hover:bg-muted/60">
                 <td className="px-4 py-3">
-                  <Link href={`/dossiers/${d.id}`} className="ident font-medium text-primary hover:underline">
+                  <Link href={`/dossiers/${d.id}`} className="ident font-medium text-link hover:underline">
                     {d.device.serial_number}
                   </Link>
                   {d.biohazard && (

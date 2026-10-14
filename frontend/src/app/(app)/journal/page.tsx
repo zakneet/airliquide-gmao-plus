@@ -93,7 +93,7 @@ export default function JournalPage() {
                 <td className="px-3 py-2.5 tabular-nums">{String(r.month).padStart(2, "0")}</td>
                 <td className="px-3 py-2.5">{r.equipment}</td>
                 <td className="px-3 py-2.5">
-                  <Link href={`/dossiers/${r.dossier_id}`} className="ident font-medium text-primary hover:underline">
+                  <Link href={`/dossiers/${r.dossier_id}`} className="ident font-medium text-link hover:underline">
                     {r.serial_number}
                   </Link>
                 </td>
