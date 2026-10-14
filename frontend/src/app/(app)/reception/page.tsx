@@ -2,7 +2,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { api } from "@/lib/api";
-import { Button, Card, ErrorMsg, Field, Input, Select, Textarea, useLoad } from "@/components/ui";
+import { Button, Card, ErrorMsg, Field, Input, Select, Textarea, useLoad } from "@/components/kit";
 import type { DeviceModel, Dossier, Option } from "@/lib/types";
 
 export default function ReceptionPage() {
@@ -40,7 +40,7 @@ export default function ReceptionPage() {
 
   return (
     <>
-      <h1 className="text-xl font-bold text-slate-900">Nouveau retour SAV</h1>
+      <h1 className="text-2xl font-semibold">Nouveau retour SAV</h1>
       <Card>
         <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2"><ErrorMsg error={error ?? types.error} /></div>

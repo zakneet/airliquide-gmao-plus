@@ -2,7 +2,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { login } from "@/lib/api";
-import { Button, ErrorMsg, Field, Input } from "@/components/ui";
+import { Button, ErrorMsg, Field, Input } from "@/components/kit";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -24,11 +24,11 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-50 p-4">
-      <form onSubmit={submit} className="w-full max-w-sm space-y-4 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+    <main className="flex min-h-screen items-center justify-center p-4">
+      <form onSubmit={submit} className="w-full max-w-sm space-y-4 rounded-lg border border-border bg-card p-6 ">
         <div>
-          <h1 className="text-xl font-bold text-sky-800">AirLiquide GMAO+</h1>
-          <p className="text-sm text-slate-600">Connexion au suivi SAV</p>
+          <h1 className="text-xl font-semibold text-primary">AirLiquide GMAO+</h1>
+          <p className="text-sm text-muted-foreground">Connexion au suivi SAV</p>
         </div>
         <ErrorMsg error={error} />
         <Field label="Adresse e-mail"><Input name="email" type="email" autoComplete="username" required /></Field>
