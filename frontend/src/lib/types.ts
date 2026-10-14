@@ -37,13 +37,16 @@ export interface HistoryItem {
 }
 export interface Dossier {
   id: number; reference: string; device: Device; status: Status; status_label: string;
-  commercial: string; biohazard: boolean; visual_state: string; missing_accessories: string;
+  commercial: string; biohazard: boolean; biohazard_status: string; visual_condition: string;
+  hour_counter: string | null; visual_state: string; missing_accessories: string;
   comment: string; received_at: string;
   disinfection?: { product: string; validated: boolean; comment: string; technician_name: string; at: string } | null;
   diagnosis?: { comment: string; faults: { name: string; severity: string; comment: string }[] } | null;
   repair?: { started_at: string; ended_at: string; duration_minutes: number; tests: string; comment: string;
+             parts_exit_document: string;
              parts: { reference: string; name: string; quantity: number }[] } | null;
-  quality_controls?: { id: number; result: string; comment: string; at: string }[];
+  quality_controls?: { id: number; result: string; comment: string; at: string; purity: string | null;
+                       flow_pressure: string; audible_alarm_ok: boolean | null }[];
   stock_movements?: { id: number; kind: string; location: string; at: string }[];
   delivery?: { recipient: string; delivery_note: string; at: string } | null;
   photos?: { id: number; kind: string; image: string }[];
@@ -56,3 +59,32 @@ export interface DashboardData {
   top_faults: { name: string; count: number }[];
 }
 export interface LifeSheet { device: Device; dossiers: Dossier[]; timeline: HistoryItem[] }
+
+export const VISUAL_CONDITIONS = [
+  { value: "GOOD", label: "Bon état" },
+  { value: "MINOR_DAMAGE", label: "Dégâts mineurs" },
+  { value: "NEED_REPAIR", label: "Réparation nécessaire" },
+  { value: "BIOHAZARD", label: "Risque biologique" },
+] as const;
+
+export const BIOHAZARD_STATUSES = [
+  { value: "NORMAL", label: "Normal" },
+  { value: "HEAVY_CONTAMINATION", label: "Contamination importante" },
+  { value: "UNKNOWN", label: "Inconnu" },
+] as const;
+
+export const labelOf = (list: readonly { value: string; label: string }[], v: string) =>
+  list.find((x) => x.value === v)?.label ?? v;
+
+export interface ReturnDeclaration {
+  id: number; return_id: string; serial_number: string; visual_condition: string;
+  missing_accessories: string; biohazard_status: string; declared_by_name: string;
+  declared_at: string; received: boolean; dossier_id: number | null;
+}
+
+export interface JournalRow {
+  dossier_id: number; reference: string; year: number; month: number; equipment: string;
+  serial_number: string; hour_counter: string | null; purity: string | null; flow_pressure: string;
+  audible_alarm_ok: boolean | null; faults: string[]; parts_exit_document: string;
+  technician: string; exit_date: string | null; status: Status;
+}

@@ -90,6 +90,37 @@ export function ErrorMsg({ error }: { error: string | null }) {
   );
 }
 
+/** Choix unique présenté en tuiles (équivalent des boutons radio du questionnaire papier/Google Forms). */
+export function RadioTiles({ legend, name, options, value, onChange, disabled, columns = 2 }: {
+  legend: string; name: string; options: readonly { value: string; label: string }[];
+  value: string; onChange: (v: string) => void; disabled?: boolean; columns?: 2 | 3;
+}) {
+  return (
+    <fieldset disabled={disabled} className="min-w-0">
+      <legend className="mb-1.5 text-sm font-medium">{legend}</legend>
+      <div className={cn("grid gap-2", columns === 3 ? "sm:grid-cols-3" : "sm:grid-cols-2")}>
+        {options.map((o) => (
+          <label
+            key={o.value}
+            className={cn(
+              "flex min-h-11 cursor-pointer items-center gap-2.5 rounded-lg border px-3 text-sm transition-colors",
+              "has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-ring",
+              value === o.value ? "border-primary bg-accent font-medium text-accent-foreground" : "border-input bg-card hover:bg-muted",
+              disabled && "cursor-not-allowed opacity-60",
+            )}
+          >
+            <input
+              type="radio" name={name} value={o.value} checked={value === o.value}
+              onChange={() => onChange(o.value)} className="size-4 accent-[var(--primary)]"
+            />
+            {o.label}
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
 /* ---- Statut : libellé + icône, jamais la couleur seule ---- */
 
 const STATUS_STYLE: Record<Status, { cls: string; Icon: LucideIcon }> = {

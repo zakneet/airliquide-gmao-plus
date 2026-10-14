@@ -1,3 +1,4 @@
+from django.db.models import Q
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
@@ -7,7 +8,7 @@ from accounts.permissions import IsResponsableOrReadOnly
 
 from . import services
 from . import serializers as ser
-from .models import DossierSAV, Fault, Part, StockMovement
+from .models import DossierSAV, Fault, Part, ReturnDeclaration, StockMovement
 
 
 def _detail(dossier):
@@ -30,6 +31,26 @@ class PartViewSet(viewsets.ModelViewSet):
     queryset = Part.objects.order_by('reference')
     serializer_class = ser.PartSerializer
     permission_classes = [IsResponsableOrReadOnly]
+
+
+class ReturnDeclarationViewSet(mixins.CreateModelMixin, mixins.ListModelMixin,
+                               mixins.RetrieveModelMixin, viewsets.GenericViewSet):
+    """Questionnaire de retour, rempli avant l'arrivée de l'appareil."""
+
+    serializer_class = ser.ReturnDeclarationSerializer
+
+    def get_queryset(self):
+        qs = ReturnDeclaration.objects.select_related('declared_by', 'dossier')
+        p = self.request.query_params
+        if p.get('pending') == '1':
+            qs = qs.filter(dossier__isnull=True)
+        q = p.get('search', '').strip()
+        if q:
+            qs = qs.filter(Q(return_id__icontains=q) | Q(serial_number__icontains=q))
+        return qs
+
+    def perform_create(self, serializer):
+        serializer.save(declared_by=self.request.user)
 
 
 class StockMovementViewSet(viewsets.ReadOnlyModelViewSet):

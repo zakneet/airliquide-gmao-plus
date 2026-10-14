@@ -15,6 +15,8 @@ Le refresh token n'est jamais renvoyé dans le corps : il est posé en cookie `H
 | GET | `/api/devices/{id}/life-sheet/` | connecté | fiche de vie complète |
 | GET | `/api/dossiers/?status=&device=` | connecté | liste des dossiers |
 | GET | `/api/dossiers/{id}/` | connecté | dossier détaillé (toutes les étapes) |
+| POST | `/api/returns/` · GET `/api/returns/?pending=1` | connecté | questionnaire de retour (avant arrivée) |
+| GET | `/api/journal/` · `/api/reports/journal.csv` | connecté | journal de maintenance |
 | POST | `/api/dossiers/reception/` | connecté | retour SAV (crée ou retrouve l'appareil) |
 | POST | `/api/dossiers/{id}/disinfection/` | connecté | RECU → DESINFECTE |
 | POST | `/api/dossiers/{id}/diagnosis/` | connecté | DESINFECTE → DIAGNOSTIC_TERMINE |

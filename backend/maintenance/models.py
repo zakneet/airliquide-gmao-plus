@@ -1,11 +1,46 @@
 from django.conf import settings
-from django.core.validators import MinValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models, transaction
 from django.db.models import Q
 
 from inventory.models import Device, DeviceType
 
 User = settings.AUTH_USER_MODEL
+
+
+class VisualCondition(models.TextChoices):
+    GOOD = 'GOOD', 'Bon état'
+    MINOR_DAMAGE = 'MINOR_DAMAGE', 'Dégâts mineurs'
+    NEED_REPAIR = 'NEED_REPAIR', 'Réparation nécessaire'
+    BIOHAZARD = 'BIOHAZARD', 'Risque biologique'
+
+
+class BiohazardStatus(models.TextChoices):
+    NORMAL = 'NORMAL', 'Normal'
+    HEAVY_CONTAMINATION = 'HEAVY_CONTAMINATION', 'Contamination importante'
+    UNKNOWN = 'UNKNOWN', 'Inconnu'
+
+
+class ReturnDeclaration(models.Model):
+    """Questionnaire rempli AVANT l'arrivée de l'appareil (annonce de retour)."""
+
+    return_id = models.CharField('ID de retour', max_length=60, unique=True)
+    serial_number = models.CharField('numéro de série', max_length=100)
+    visual_condition = models.CharField(max_length=20, choices=VisualCondition.choices)
+    missing_accessories = models.CharField('accessoires manquants', max_length=200, blank=True)
+    biohazard_status = models.CharField(max_length=20, choices=BiohazardStatus.choices)
+    declared_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name='+')
+    declared_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-declared_at']
+
+    def __str__(self):
+        return f'{self.return_id} · {self.serial_number}'
+
+    @property
+    def received(self):
+        return hasattr(self, 'dossier') and self.dossier is not None
 
 
 class DossierSAV(models.Model):
@@ -25,7 +60,15 @@ class DossierSAV(models.Model):
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.RECU)
     commercial = models.CharField(max_length=100, blank=True)
     biohazard = models.BooleanField('risque biologique', default=False)
-    visual_state = models.CharField('état visuel', max_length=200, blank=True)
+    biohazard_status = models.CharField(max_length=20, choices=BiohazardStatus.choices,
+                                        default=BiohazardStatus.UNKNOWN)
+    visual_condition = models.CharField(max_length=20, choices=VisualCondition.choices,
+                                        default=VisualCondition.GOOD)
+    visual_state = models.CharField('état visuel (précisions)', max_length=200, blank=True)
+    hour_counter = models.DecimalField('compteur horaire (C.H)', max_digits=9, decimal_places=1,
+                                       null=True, blank=True)
+    return_declaration = models.OneToOneField(ReturnDeclaration, on_delete=models.PROTECT,
+                                              null=True, blank=True, related_name='dossier')
     missing_accessories = models.CharField('accessoires manquants', max_length=200, blank=True)
     comment = models.TextField(blank=True)
     received_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name='+')
@@ -138,6 +181,7 @@ class Repair(models.Model):
     started_at = models.DateTimeField()
     ended_at = models.DateTimeField()
     tests = models.TextField('tests effectués', blank=True)
+    parts_exit_document = models.CharField('document de sortie pièces (PR)', max_length=60, blank=True)
     comment = models.TextField(blank=True)
 
     @property
@@ -165,6 +209,10 @@ class QualityControl(models.Model):
     technician = models.ForeignKey(User, on_delete=models.PROTECT, related_name='+')
     checklist = models.JSONField(default=dict)
     result = models.CharField(max_length=15, choices=Result.choices)
+    purity = models.DecimalField('pureté O₂ (%)', max_digits=4, decimal_places=1, null=True, blank=True,
+                                 validators=[MinValueValidator(0), MaxValueValidator(100)])
+    flow_pressure = models.CharField('débit / pression', max_length=50, blank=True)
+    audible_alarm_ok = models.BooleanField('alarme sonore conforme', null=True, blank=True)
     comment = models.TextField(blank=True)
     at = models.DateTimeField(auto_now_add=True)
 

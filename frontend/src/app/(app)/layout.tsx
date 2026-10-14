@@ -2,17 +2,19 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Suspense, useEffect, useState, type ReactNode } from "react";
-import { Boxes, ClipboardPlus, FileText, FolderOpen, LayoutDashboard, LogOut, Package, type LucideIcon } from "lucide-react";
+import { BookOpen, Boxes, ClipboardPlus, FileText, FolderOpen, LayoutDashboard, LogOut, Package, Truck, type LucideIcon } from "lucide-react";
 import { api, auth } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import type { User } from "@/lib/types";
 
 const NAV: { href: string; label: string; Icon: LucideIcon; responsable?: boolean }[] = [
   { href: "/", label: "Tableau de bord", Icon: LayoutDashboard },
-  { href: "/reception", label: "Nouveau retour", Icon: ClipboardPlus },
+  { href: "/returns", label: "Retours annoncés", Icon: Truck },
+  { href: "/reception", label: "Réception", Icon: ClipboardPlus },
   { href: "/dossiers", label: "Dossiers SAV", Icon: FolderOpen },
   { href: "/devices", label: "Appareils", Icon: Boxes },
   { href: "/stock", label: "Stock livrable", Icon: Package },
+  { href: "/journal", label: "Journal", Icon: BookOpen },
   { href: "/reports", label: "Rapports", Icon: FileText, responsable: true },
 ];
 
@@ -32,7 +34,7 @@ function Shell({ children }: { children: ReactNode }) {
       <a href="#contenu" className="sr-only focus:not-sr-only focus:absolute focus:z-10 focus:bg-card focus:p-3">
         Aller au contenu
       </a>
-      <aside className="border-b border-border bg-card md:sticky md:top-0 md:h-screen md:w-64 md:shrink-0 md:border-b-0 md:border-r">
+      <aside className="print:hidden border-b border-border bg-card md:sticky md:top-0 md:h-screen md:w-64 md:shrink-0 md:border-b-0 md:border-r">
         <div className="px-4 py-4">
           <p className="text-lg font-semibold text-primary">AirLiquide GMAO+</p>
           <p className="min-h-5 text-sm text-muted-foreground">

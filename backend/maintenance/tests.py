@@ -240,3 +240,106 @@ class DashboardReportTests(Base):
         r = self.client.get('/api/reports/dossiers.csv')
         self.assertEqual(r.status_code, 200)
         self.assertIn('SN001', r.content.decode('utf-8-sig'))
+
+
+class ReturnQuestionnaireTests(Base):
+    def declare(self, return_id='RET-001', serial='sn 777', **extra):
+        data = {'return_id': return_id, 'serial_number': serial, 'visual_condition': 'MINOR_DAMAGE',
+                'biohazard_status': 'NORMAL', 'missing_accessories': 'Masque', **extra}
+        return self.client.post('/api/returns/', data)
+
+    def test_declaration_created_and_normalized(self):
+        r = self.declare()
+        self.assertEqual(r.status_code, 201, r.data)
+        self.assertEqual(r.data['serial_number'], 'SN777')
+        self.assertFalse(r.data['received'])
+
+    def test_return_id_unique(self):
+        self.declare()
+        self.assertEqual(self.declare(serial='other').status_code, 400)
+
+    def test_invalid_choice_rejected(self):
+        self.assertEqual(self.declare(visual_condition='BROKEN').status_code, 400)
+
+    def test_pending_filter_and_reception_links_declaration(self):
+        decl = self.declare().data
+        self.assertEqual(len(self.client.get('/api/returns/?pending=1').data), 1)
+        r = self.reception('sn777', return_declaration=decl['id'], biohazard_status='NORMAL',
+                           visual_condition='GOOD', hour_counter='8661.8')
+        self.assertEqual(r.status_code, 201, r.data)
+        self.assertEqual(r.data['return_declaration'], decl['id'])
+        self.assertFalse(r.data['biohazard'])
+        self.assertEqual(r.data['hour_counter'], '8661.8')
+        self.assertEqual(len(self.client.get('/api/returns/?pending=1').data), 0)
+
+    def test_declaration_cannot_be_received_twice(self):
+        decl = self.declare().data
+        self.reception('sn777', return_declaration=decl['id'])
+        d = DossierSAV.objects.get(return_declaration_id=decl['id'])
+        self.go(d.id, 'DESINFECTE')  # refusé : pas de désinfection
+        for action, data in [('disinfection', {}), ('diagnosis', {'faults': []}),
+                             ('repair', {'started_at': T0, 'ended_at': T1}),
+                             ('quality-control', {'checklist': ALL_OK}),
+                             ('stock-entry', {'location': 'A'}), ('delivery', {'recipient': 'X'})]:
+            self.post(d.id, action, data)
+        r = self.reception('sn777', return_declaration=decl['id'])
+        self.assertEqual(r.status_code, 400)
+
+    def test_serial_mismatch_rejected(self):
+        decl = self.declare().data
+        r = self.reception('another-serial', return_declaration=decl['id'])
+        self.assertEqual(r.status_code, 400)
+
+    def test_unknown_or_contaminated_status_flags_biohazard(self):
+        for status in ('UNKNOWN', 'HEAVY_CONTAMINATION'):
+            r = self.reception(f'sn-{status}', biohazard_status=status)
+            self.assertTrue(r.data['biohazard'], status)
+        r = self.reception('sn-vis', biohazard_status='NORMAL', visual_condition='BIOHAZARD')
+        self.assertTrue(r.data['biohazard'])
+
+
+class JournalTests(Base):
+    def test_journal_matches_paper_register(self):
+        d = self.reception('GPB 0120280005', hour_counter='8661.8', biohazard_status='NORMAL').data
+        i = d['id']
+        self.post(i, 'disinfection')
+        self.post(i, 'diagnosis', {'faults': [{'fault': self.fault.id}]})
+        self.post(i, 'repair', {'started_at': T0, 'ended_at': T1, 'parts_exit_document': 'PR-1042'})
+        self.post(i, 'quality-control', {'checklist': ALL_OK, 'purity': '93.5',
+                                         'flow_pressure': '3 L/min', 'audible_alarm_ok': True})
+        self.post(i, 'stock-entry', {'location': 'A-01'})
+        self.post(i, 'delivery', {'recipient': 'Client'})
+        rows = self.client.get('/api/journal/').data
+        self.assertEqual(len(rows), 1)
+        r = rows[0]
+        self.assertEqual(r['serial_number'], 'GPB0120280005')
+        self.assertEqual(r['hour_counter'], '8661.8')
+        self.assertEqual(r['purity'], '93.5')
+        self.assertEqual(r['flow_pressure'], '3 L/min')
+        self.assertTrue(r['audible_alarm_ok'])
+        self.assertEqual(r['faults'], ['Compresseur'])
+        self.assertEqual(r['parts_exit_document'], 'PR-1042')
+        self.assertIsNotNone(r['exit_date'])
+
+    def test_journal_filters_and_csv(self):
+        self.reception('s1')
+        self.assertEqual(len(self.client.get('/api/journal/?year=1999').data), 0)
+        self.assertEqual(len(self.client.get('/api/journal/?search=S1').data), 1)
+        r = self.client.get('/api/reports/journal.csv')
+        self.assertEqual(r.status_code, 200)
+        text = r.content.decode('utf-8-sig')
+        self.assertIn('Doc de sortie PR', text)
+        self.assertIn('S1', text)
+
+    def test_purity_out_of_range_rejected(self):
+        d = self.reception().data
+        i = d['id']
+        self.post(i, 'disinfection')
+        self.post(i, 'diagnosis', {'faults': []})
+        self.post(i, 'repair', {'started_at': T0, 'ended_at': T1})
+        r = self.post(i, 'quality-control', {'checklist': ALL_OK, 'purity': '120'})
+        self.assertEqual(r.status_code, 400)
+
+    def test_journal_requires_auth(self):
+        self.client.force_authenticate(None)
+        self.assertEqual(self.client.get('/api/journal/').status_code, 401)
