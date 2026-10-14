@@ -30,4 +30,5 @@ Mot de passe défini dans `backend/inventory/management/commands/seed_demo.py` :
 - `DJANGO_DEBUG=False`, `DJANGO_SECRET_KEY` long et aléatoire, `DJANGO_ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`.
 - PostgreSQL, HTTPS, stockage des médias, sauvegardes.
 - Supprimer les comptes `demo.*`.
-- Limites connues : jetons JWT en `localStorage` (à durcir via cookies HttpOnly), pas de limitation de débit sur le login, pas d'application mobile.
+- `CORS_ALLOWED_ORIGINS` doit contenir l'origine exacte du frontend (cookies avec credentials) ; servir front et API en HTTPS sur le même domaine parent.
+- Limites connues : cache de limitation de débit local à chaque processus (utiliser Redis en multi-instances), pas d'application mobile.

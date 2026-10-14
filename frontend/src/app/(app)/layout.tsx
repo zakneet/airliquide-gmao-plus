@@ -20,8 +20,9 @@ function Shell({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    if (!auth.isLoggedIn()) { router.replace("/login"); return; }
+    auth.setUnauthorizedHandler(() => router.replace("/login"));
     api<User>("/auth/me/").then(setUser).catch(() => {});
+    return () => auth.setUnauthorizedHandler(null);
   }, [router]);
 
   return (
@@ -41,7 +42,7 @@ function Shell({ children }: { children: ReactNode }) {
               </Link>
             );
           })}
-          <button onClick={() => { auth.logout(); router.replace("/login"); }}
+          <button onClick={async () => { await auth.logout(); router.replace("/login"); }}
             className="rounded-md px-3 py-2 text-left text-sm text-slate-600 hover:bg-slate-100">
             Déconnexion
           </button>
