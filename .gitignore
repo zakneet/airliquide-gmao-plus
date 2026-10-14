@@ -12,3 +12,5 @@ node_modules/
 .idea/
 .vscode/
 .DS_Store
+backend.log
+frontend.log
