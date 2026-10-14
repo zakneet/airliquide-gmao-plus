@@ -1,4 +1,4 @@
-﻿from rest_framework.test import APITestCase
+from rest_framework.test import APITestCase
 
 from .models import User
 
@@ -7,6 +7,8 @@ PWD = 'Str0ng-Test-Pass!'
 
 class AuthTests(APITestCase):
     def setUp(self):
+        from django.core.cache import cache
+        cache.clear()
         self.tech = User.objects.create_user('tech@example.test', PWD, role=User.Role.TECHNICIEN)
         self.resp = User.objects.create_user('resp@example.test', PWD, role=User.Role.RESPONSABLE_SAV)
 
@@ -48,3 +50,38 @@ class AuthTests(APITestCase):
         self._login('resp@example.test')
         r = self.client.post('/api/users/', {'email': 'tech@example.test', 'password': PWD})
         self.assertEqual(r.status_code, 400)
+
+
+class CookieSessionTests(APITestCase):
+    def setUp(self):
+        from django.core.cache import cache
+        cache.clear()
+        User.objects.create_user('c@example.test', PWD)
+
+    def test_login_sets_httponly_cookie_and_hides_refresh(self):
+        r = self.client.post('/api/auth/login/', {'email': 'c@example.test', 'password': PWD})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(list(r.data), ['access'])
+        c = r.cookies['refresh_token']
+        self.assertTrue(c['httponly'])
+        self.assertEqual(c['samesite'], 'Lax')
+
+    def test_refresh_uses_cookie(self):
+        self.client.post('/api/auth/login/', {'email': 'c@example.test', 'password': PWD})
+        r = self.client.post('/api/auth/refresh/')
+        self.assertEqual(r.status_code, 200)
+        self.assertIn('access', r.data)
+
+    def test_refresh_without_cookie_rejected(self):
+        self.assertEqual(self.client.post('/api/auth/refresh/').status_code, 401)
+
+    def test_logout_clears_cookie(self):
+        self.client.post('/api/auth/login/', {'email': 'c@example.test', 'password': PWD})
+        r = self.client.post('/api/auth/logout/')
+        self.assertEqual(r.status_code, 204)
+        self.assertEqual(self.client.post('/api/auth/refresh/').status_code, 401)
+
+    def test_login_is_throttled(self):
+        codes = [self.client.post('/api/auth/login/', {'email': 'c@example.test', 'password': 'x'}).status_code
+                 for _ in range(12)]
+        self.assertIn(429, codes)

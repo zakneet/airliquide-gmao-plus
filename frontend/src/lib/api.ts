@@ -20,56 +20,60 @@ export function formatError(data: unknown): string {
   return String(data);
 }
 
-const store = {
-  get: (k: string) => { try { return localStorage.getItem(k); } catch { return null; } },
-  set: (k: string, v: string) => { try { localStorage.setItem(k, v); } catch {} },
-  del: (k: string) => { try { localStorage.removeItem(k); } catch {} },
-};
+// L'access token reste en mémoire ; le refresh token est dans un cookie HttpOnly
+// inaccessible au JavaScript (protection contre le vol de jeton par XSS).
+let accessToken: string | null = null;
+let onUnauthorized: (() => void) | null = null;
 
 export const auth = {
-  isLoggedIn: () => !!store.get("access"),
-  logout: () => { store.del("access"); store.del("refresh"); },
+  /** Tente de restaurer la session depuis le cookie (après rechargement de page). */
+  async restore(): Promise<boolean> {
+    return accessToken ? true : refresh();
+  },
+  async logout() {
+    accessToken = null;
+    await fetch(`${BASE}/auth/logout/`, { method: "POST", credentials: "include" }).catch(() => {});
+  },
+  setUnauthorizedHandler(fn: (() => void) | null) { onUnauthorized = fn; },
 };
 
 async function refresh(): Promise<boolean> {
-  const r = store.get("refresh");
-  if (!r) return false;
-  const res = await fetch(`${BASE}/auth/refresh/`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refresh: r }),
-  });
-  if (!res.ok) return false;
-  store.set("access", (await res.json()).access);
-  return true;
+  try {
+    const res = await fetch(`${BASE}/auth/refresh/`, { method: "POST", credentials: "include" });
+    if (!res.ok) return false;
+    accessToken = (await res.json()).access;
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export async function login(email: string, password: string) {
   const res = await fetch(`${BASE}/auth/login/`, {
     method: "POST",
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
   });
   const data = await res.json().catch(() => null);
+  if (res.status === 429) throw new ApiError(429, "Trop de tentatives. Réessayez dans une minute.");
   if (!res.ok) throw new ApiError(res.status, data?.detail ? "Identifiants invalides." : data);
-  store.set("access", data.access);
-  store.set("refresh", data.refresh);
+  accessToken = data.access;
 }
 
 export async function api<T = unknown>(path: string, init: RequestInit & { json?: unknown } = {}, retry = true): Promise<T> {
   const headers = new Headers(init.headers);
-  const token = store.get("access");
-  if (token) headers.set("Authorization", `Bearer ${token}`);
+  if (accessToken) headers.set("Authorization", `Bearer ${accessToken}`);
   let body = init.body;
   if (init.json !== undefined) {
     headers.set("Content-Type", "application/json");
     body = JSON.stringify(init.json);
   }
-  const res = await fetch(`${BASE}${path}`, { ...init, headers, body });
+  const res = await fetch(`${BASE}${path}`, { ...init, headers, body, credentials: "include" });
   if (res.status === 401 && retry && (await refresh())) return api<T>(path, init, false);
   if (res.status === 401) {
-    auth.logout();
-    if (typeof window !== "undefined") window.location.href = "/login";
+    accessToken = null;
+    onUnauthorized?.();
   }
   if (res.status === 204) return undefined as T;
   const data = await res.json().catch(() => null);
@@ -78,7 +82,10 @@ export async function api<T = unknown>(path: string, init: RequestInit & { json?
 }
 
 export async function downloadCsv(path: string, filename: string) {
-  const res = await fetch(`${BASE}${path}`, { headers: { Authorization: `Bearer ${store.get("access")}` } });
+  const res = await fetch(`${BASE}${path}`, {
+    headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+    credentials: "include",
+  });
   if (!res.ok) throw new ApiError(res.status, "Export refusé.");
   const url = URL.createObjectURL(await res.blob());
   const a = document.createElement("a");

@@ -2,10 +2,12 @@
 
 Documentation interactive : `http://localhost:8000/api/docs/` (Swagger, générée par drf-spectacular).
 Authentification : `Authorization: Bearer <access>` (JWT, obtenu sur `/api/auth/login/`).
+Le refresh token n'est jamais renvoyé dans le corps : il est posé en cookie `HttpOnly`, `SameSite=Lax` (`Secure` hors DEBUG) sur `/api/auth/`. `POST /api/auth/refresh/` l'utilise, `POST /api/auth/logout/` l'efface. Le login est limité à 10 essais/min (`LOGIN_THROTTLE_RATE`).
 
 | Méthode | Endpoint | Rôle | Description |
 |---|---|---|---|
-| POST | `/api/auth/login/` | public | e-mail + mot de passe → access/refresh |
+| POST | `/api/auth/login/` | public | e-mail + mot de passe → access (+ cookie refresh) |
+| POST | `/api/auth/refresh/`, `/api/auth/logout/` | cookie | renouvellement / déconnexion |
 | GET | `/api/auth/me/` | connecté | profil |
 | CRUD | `/api/users/` | Responsable | administration utilisateurs |
 | CRUD | `/api/device-types/`, `/brands/`, `/device-models/`, `/faults/`, `/parts/` | lecture : tous, écriture : Responsable | catalogues |

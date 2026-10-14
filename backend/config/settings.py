@@ -168,3 +168,10 @@ MEDIA_ROOT = BASE_DIR / 'media'
 DATA_UPLOAD_MAX_MEMORY_SIZE = 6 * 1024 * 1024
 
 CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:3000').split(',')
+
+# Cookies (refresh token HttpOnly) : le frontend envoie les cookies vers l'API.
+CORS_ALLOW_CREDENTIALS = True
+REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
+    'login': os.environ.get('LOGIN_THROTTLE_RATE', '10/min'),
+    'refresh': '60/min',
+}

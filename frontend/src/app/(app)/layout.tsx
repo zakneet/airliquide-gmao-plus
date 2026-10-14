@@ -20,21 +20,20 @@ function Shell({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    if (!auth.isLoggedIn()) { router.replace("/login"); return; }
+    auth.setUnauthorizedHandler(() => router.replace("/login"));
     api<User>("/auth/me/").then(setUser).catch(() => {});
+    return () => auth.setUnauthorizedHandler(null);
   }, [router]);
-
-  if (!user) return <p className="p-8 text-slate-600">Chargement…</p>;
 
   return (
     <div className="min-h-screen bg-slate-50 md:flex">
       <aside className="border-b border-slate-200 bg-white md:w-60 md:border-b-0 md:border-r">
         <div className="px-4 py-4">
           <p className="text-lg font-bold text-sky-800">AirLiquide GMAO+</p>
-          <p className="text-xs text-slate-500">{user.first_name || user.email}</p>
+          <p className="text-xs text-slate-500">{user ? user.first_name || user.email : "…"}</p>
         </div>
         <nav className="flex gap-1 overflow-x-auto px-2 pb-2 md:flex-col md:overflow-visible">
-          {NAV.filter((n) => !n.responsable || user.role === "RESPONSABLE_SAV").map((n) => {
+          {NAV.filter((n) => !n.responsable || user?.role === "RESPONSABLE_SAV").map((n) => {
             const active = n.href === "/" ? path === "/" : path.startsWith(n.href);
             return (
               <Link key={n.href} href={n.href}
@@ -43,7 +42,7 @@ function Shell({ children }: { children: ReactNode }) {
               </Link>
             );
           })}
-          <button onClick={() => { auth.logout(); router.replace("/login"); }}
+          <button onClick={async () => { await auth.logout(); router.replace("/login"); }}
             className="rounded-md px-3 py-2 text-left text-sm text-slate-600 hover:bg-slate-100">
             Déconnexion
           </button>

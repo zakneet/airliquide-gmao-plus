@@ -30,7 +30,7 @@ L'objectif est de remplacer les formulaires papier, Google Forms et Google Sheet
 - Stock
 - Historique complet
 - Tableau de bord
-- Rapports PDF
+- Rapports (export CSV)
 - Authentification
 
 ---
@@ -48,11 +48,19 @@ Frontend
 - Next.js
 - TypeScript
 - Tailwind CSS
-- shadcn/ui
+- Interface Tailwind (composants maison ; shadcn/ui prévu)
 
 Mobile
 
 - Flutter
+
+---
+
+## Documentation
+
+- [Démarrage local](docs/08_DEMARRAGE.md)
+- [API REST](docs/07_API.md)
+- [Workflow](docs/03_WORKFLOW.md) · [Base de données](docs/06_BASE_DE_DONNEES.md)
 
 ---
 
