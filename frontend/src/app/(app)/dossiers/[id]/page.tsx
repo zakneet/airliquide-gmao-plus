@@ -4,7 +4,10 @@ import { useParams } from "next/navigation";
 import { useState } from "react";
 import { api } from "@/lib/api";
 import { Button, Card, ErrorMsg, Field, fmt, Input, Select, Stepper, StatusBadge, Textarea, useLoad } from "@/components/kit";
-import { NEXT_STEP, QC_CHECKLIST, type Dossier, type Fault, type Part } from "@/lib/types";
+import {
+  BIOHAZARD_STATUSES, NEXT_STEP, QC_CHECKLIST, VISUAL_CONDITIONS, labelOf,
+  type Dossier, type Fault, type Part,
+} from "@/lib/types";
 
 type Submit = (action: string, body: unknown) => Promise<void>;
 
@@ -64,6 +67,7 @@ function StepForm({ d, submit, busy }: { d: Dossier; submit: Submit; busy: boole
         <form className="space-y-3" onSubmit={onSubmit("repair", (f) => ({
           started_at: toIso(f.get("started_at")), ended_at: toIso(f.get("ended_at")),
           tests: f.get("tests"), comment: f.get("comment"),
+          parts_exit_document: f.get("parts_exit_document"),
           parts: Array.from({ length: nParts }, (_, i) => ({ part: Number(f.get(`part-${i}`)), quantity: Number(f.get(`qty-${i}`)) }))
             .filter((p) => p.part),
         }))}>
@@ -83,6 +87,7 @@ function StepForm({ d, submit, busy }: { d: Dossier; submit: Submit; busy: boole
             ))}
             <Button type="button" variant="ghost" onClick={() => setNParts(nParts + 1)}>Ajouter une pièce</Button>
           </div>
+          <Field label="Document de sortie pièces (PR)"><Input name="parts_exit_document" className="ident" /></Field>
           <Field label="Tests effectués"><Textarea name="tests" /></Field>
           <Field label="Commentaire"><Textarea name="comment" /></Field>
           {submitBtn("Enregistrer la réparation")}
@@ -92,7 +97,19 @@ function StepForm({ d, submit, busy }: { d: Dossier; submit: Submit; busy: boole
       return (
         <form className="space-y-3" onSubmit={onSubmit("quality-control", (f) => ({
           checklist: Object.fromEntries(QC_CHECKLIST.map((i) => [i, f.get(`qc-${i}`) === "on"])),
+          purity: f.get("purity") || null,
+          flow_pressure: f.get("flow_pressure"),
+          audible_alarm_ok: f.get("alarm") === "ok" ? true : f.get("alarm") === "ko" ? false : null,
           comment: f.get("comment") }))}>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <Field label="Pureté O₂ (%)"><Input name="purity" type="number" step="0.1" min="0" max="100" inputMode="decimal" className="ident" /></Field>
+            <Field label="Débit / pression"><Input name="flow_pressure" placeholder="ex. 3 L/min" /></Field>
+            <Field label="Alarme sonore">
+              <Select name="alarm" defaultValue="">
+                <option value="">Non testée</option><option value="ok">Conforme</option><option value="ko">Non conforme</option>
+              </Select>
+            </Field>
+          </div>
           <fieldset className="grid gap-2 sm:grid-cols-2">
             <legend className="mb-1 text-sm font-medium text-foreground">Checklist (cocher si conforme)</legend>
             {QC_CHECKLIST.map((i) => (
@@ -169,10 +186,10 @@ export default function DossierPage() {
     <>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <h1 className="text-2xl font-semibold">{d.reference}</h1>
+          <h1 className="ident text-2xl font-semibold">{d.reference}</h1>
           <p className="text-sm text-muted-foreground">
             <Link className="text-primary underline" href={`/devices/${d.device.id}`}>{d.device.internal_code}</Link>
-            {" · "}N° série {d.device.serial_number} · {d.device.type_name}
+            {" · "}N° série <span className="ident">{d.device.serial_number}</span> · {d.device.type_name}
           </p>
         </div>
         <StatusBadge status={d.status} />
@@ -186,11 +203,15 @@ export default function DossierPage() {
       </Card>
 
       <Card title="Réception">
-        <dl className="grid gap-2 text-sm sm:grid-cols-2">
+        <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
           <div><dt className="text-muted-foreground">Reçu le</dt><dd>{fmt(d.received_at)}</dd></div>
-          <div><dt className="text-muted-foreground">Commercial</dt><dd>{d.commercial || "–"}</dd></div>
-          <div><dt className="text-muted-foreground">État visuel</dt><dd>{d.visual_state || "–"}</dd></div>
+          <div><dt className="text-muted-foreground">État visuel</dt>
+            <dd>{labelOf(VISUAL_CONDITIONS, d.visual_condition)}{d.visual_state && ` · ${d.visual_state}`}</dd></div>
+          <div><dt className="text-muted-foreground">Statut biologique</dt>
+            <dd>{labelOf(BIOHAZARD_STATUSES, d.biohazard_status)}</dd></div>
+          <div><dt className="text-muted-foreground">Compteur horaire (C.H)</dt><dd className="ident">{d.hour_counter ?? "–"}</dd></div>
           <div><dt className="text-muted-foreground">Accessoires manquants</dt><dd>{d.missing_accessories || "–"}</dd></div>
+          <div><dt className="text-muted-foreground">Commercial</dt><dd>{d.commercial || "–"}</dd></div>
         </dl>
       </Card>
 

@@ -1,9 +1,9 @@
 from rest_framework import serializers
 
-from inventory.models import DeviceModel, DeviceType
+from inventory.models import Device, DeviceModel, DeviceType
 from inventory.serializers import DeviceSerializer
 
-from .models import (Delivery, DetectedFault, Diagnosis, Disinfection, DossierSAV, Fault, Part,
+from .models import (BiohazardStatus, ReturnDeclaration, VisualCondition, Delivery, DetectedFault, Diagnosis, Disinfection, DossierSAV, Fault, Part,
                      Photo, QualityControl, Repair, ReplacedPart, StatusHistory, StockMovement)
 
 MAX_PHOTO_BYTES = 5 * 1024 * 1024
@@ -71,14 +71,15 @@ class RepairSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Repair
-        fields = ('started_at', 'ended_at', 'duration_minutes', 'tests', 'comment',
+        fields = ('started_at', 'ended_at', 'duration_minutes', 'tests', 'parts_exit_document', 'comment',
                   'technician', 'parts')
 
 
 class QualityControlSerializer(serializers.ModelSerializer):
     class Meta:
         model = QualityControl
-        fields = ('id', 'result', 'checklist', 'comment', 'technician', 'at')
+        fields = ('id', 'result', 'checklist', 'purity', 'flow_pressure', 'audible_alarm_ok',
+                  'comment', 'technician', 'at')
 
 
 class StockMovementSerializer(serializers.ModelSerializer):
@@ -118,7 +119,8 @@ class DossierSerializer(serializers.ModelSerializer):
     class Meta:
         model = DossierSAV
         fields = ('id', 'reference', 'device', 'status', 'status_label', 'commercial', 'biohazard',
-                  'visual_state', 'missing_accessories', 'comment', 'received_by', 'received_at')
+                  'biohazard_status', 'visual_condition', 'visual_state', 'hour_counter',
+                  'return_declaration', 'missing_accessories', 'comment', 'received_by', 'received_at')
         read_only_fields = fields
 
 
@@ -162,8 +164,45 @@ class DossierDetailSerializer(DossierSerializer):
 
 
 # --- Entrées (actions) ---
+class ReturnDeclarationSerializer(serializers.ModelSerializer):
+    received = serializers.SerializerMethodField()
+    dossier_id = serializers.SerializerMethodField()
+    declared_by_name = serializers.CharField(source='declared_by.get_full_name', read_only=True)
+
+    class Meta:
+        model = ReturnDeclaration
+        fields = ('id', 'return_id', 'serial_number', 'visual_condition', 'missing_accessories',
+                  'biohazard_status', 'declared_by', 'declared_by_name', 'declared_at',
+                  'received', 'dossier_id')
+        read_only_fields = ('id', 'declared_by', 'declared_at')
+
+    def get_received(self, o):
+        return hasattr(o, 'dossier')
+
+    def get_dossier_id(self, o):
+        return o.dossier.id if hasattr(o, 'dossier') else None
+
+    def validate_serial_number(self, v):
+        v = Device.normalize_serial(v)
+        if not v:
+            raise serializers.ValidationError('Numéro de série obligatoire.')
+        return v
+
+    def validate_return_id(self, v):
+        v = v.strip()
+        if not v:
+            raise serializers.ValidationError("L'ID de retour est obligatoire.")
+        return v
+
+
 class ReceptionSerializer(serializers.Serializer):
+    return_declaration = serializers.PrimaryKeyRelatedField(
+        queryset=ReturnDeclaration.objects.all(), required=False, allow_null=True)
     serial_number = serializers.CharField(max_length=100)
+    visual_condition = serializers.ChoiceField(choices=VisualCondition.choices, default='GOOD')
+    biohazard_status = serializers.ChoiceField(choices=BiohazardStatus.choices, default='UNKNOWN')
+    hour_counter = serializers.DecimalField(max_digits=9, decimal_places=1, required=False,
+                                            allow_null=True, min_value=0)
     device_type = serializers.PrimaryKeyRelatedField(queryset=DeviceType.objects.all())
     model = serializers.PrimaryKeyRelatedField(queryset=DeviceModel.objects.all(), required=False,
                                                allow_null=True)
@@ -208,6 +247,7 @@ class PartInput(serializers.Serializer):
 
 
 class RepairInput(serializers.Serializer):
+    parts_exit_document = serializers.CharField(max_length=60, required=False, allow_blank=True, default='')
     started_at = serializers.DateTimeField()
     ended_at = serializers.DateTimeField()
     parts = PartInput(many=True, required=False, default=list)
@@ -217,6 +257,10 @@ class RepairInput(serializers.Serializer):
 
 class QualityControlInput(serializers.Serializer):
     checklist = serializers.DictField(child=serializers.BooleanField())
+    purity = serializers.DecimalField(max_digits=4, decimal_places=1, required=False, allow_null=True,
+                                      min_value=0, max_value=100)
+    flow_pressure = serializers.CharField(max_length=50, required=False, allow_blank=True, default='')
+    audible_alarm_ok = serializers.BooleanField(required=False, allow_null=True, default=None)
     comment = serializers.CharField(required=False, allow_blank=True, default='')
 
 

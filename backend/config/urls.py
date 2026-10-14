@@ -8,8 +8,9 @@ from rest_framework.routers import DefaultRouter
 from accounts.views import UserViewSet
 from dashboard.views import DashboardView
 from inventory.views import BrandViewSet, DeviceModelViewSet, DeviceTypeViewSet, DeviceViewSet
-from maintenance.views import DossierViewSet, FaultViewSet, PartViewSet, StockMovementViewSet
-from reports.views import DossiersCsvView
+from maintenance.views import (DossierViewSet, FaultViewSet, PartViewSet, ReturnDeclarationViewSet,
+                               StockMovementViewSet)
+from reports.views import DossiersCsvView, JournalCsvView, JournalView
 
 router = DefaultRouter()
 router.register('users', UserViewSet, basename='user')
@@ -18,6 +19,7 @@ router.register('brands', BrandViewSet)
 router.register('device-models', DeviceModelViewSet)
 router.register('devices', DeviceViewSet, basename='device')
 router.register('dossiers', DossierViewSet, basename='dossier')
+router.register('returns', ReturnDeclarationViewSet, basename='returndeclaration')
 router.register('faults', FaultViewSet, basename='fault')
 router.register('parts', PartViewSet, basename='part')
 router.register('stock-movements', StockMovementViewSet, basename='stockmovement')
@@ -26,6 +28,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('accounts.urls')),
     path('api/dashboard/', DashboardView.as_view(), name='dashboard'),
+    path('api/journal/', JournalView.as_view(), name='journal'),
+    path('api/reports/journal.csv', JournalCsvView.as_view(), name='journal-csv'),
     path('api/reports/dossiers.csv', DossiersCsvView.as_view(), name='report-dossiers'),
     path('api/', include(router.urls)),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
