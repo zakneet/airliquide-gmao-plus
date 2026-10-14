@@ -48,7 +48,7 @@ Frontend
 - Next.js
 - TypeScript
 - Tailwind CSS
-- Interface Tailwind (composants maison ; shadcn/ui prévu)
+- shadcn/ui (voir `frontend/DESIGN.md`)
 
 Mobile
 
