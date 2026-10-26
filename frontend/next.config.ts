@@ -6,6 +6,9 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   allowedDevOrigins: ["192.168.56.1"],
+  experimental: {
+    agentUpgrade: "security",
+  },
   turbopack: {
     root: process.cwd(),
     rules: {
