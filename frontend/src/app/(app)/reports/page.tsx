@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { downloadCsv } from "@/lib/api";
-import { Button, Card, ErrorMsg, Field, Input, Select } from "@/components/ui";
+import { Button, Card, ErrorMsg, Field, Input, Select } from "@/components/kit";
 import { STATUSES } from "@/lib/types";
 
 export default function ReportsPage() {
@@ -22,7 +22,7 @@ export default function ReportsPage() {
 
   return (
     <>
-      <h1 className="text-xl font-bold text-slate-900">Rapports</h1>
+      <h1 className="text-2xl font-semibold">Rapports</h1>
       <Card title="Export des dossiers SAV (CSV)">
         <form onSubmit={onSubmit} className="grid gap-3 sm:grid-cols-3">
           <div className="sm:col-span-3"><ErrorMsg error={error} /></div>

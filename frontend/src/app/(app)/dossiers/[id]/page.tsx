@@ -1,129 +1,128 @@
 "use client";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useState } from "react";
-import { api } from "@/lib/api";
-import { Button, Card, ErrorMsg, Field, fmt, Input, Select, Stepper, StatusBadge, Textarea, useLoad } from "@/components/ui";
-import { NEXT_STEP, QC_CHECKLIST, type Dossier, type Fault, type Part } from "@/lib/types";
+import { useState, type ReactNode } from "react";
+import { toast } from "sonner";
+import {
+  BadgeCheck, ClipboardList, ImagePlus, Inbox, Package, ShieldAlert, ShieldCheck, Truck, Wrench,
+  type LucideIcon,
+} from "lucide-react";
+import { api, mediaUrl } from "@/lib/api";
+import { cn } from "@/lib/utils";
+import { ErrorMsg, fmt, ListSkeleton, StatusBadge, useLoad } from "@/components/kit";
+import { StepForm, type Submit } from "@/components/step-forms";
+import {
+  BIOHAZARD_STATUSES, NEXT_STEP, STATUSES, VISUAL_CONDITIONS, labelOf, type Dossier,
+} from "@/lib/types";
 
-type Submit = (action: string, body: unknown) => Promise<void>;
+const STEPS: { title: string; Icon: LucideIcon; action: string; success: string }[] = [
+  { title: "Réception", Icon: Inbox, action: "", success: "" },
+  { title: "Désinfection", Icon: ShieldCheck, action: "disinfection", success: "Désinfection validée" },
+  { title: "Diagnostic", Icon: ClipboardList, action: "diagnosis", success: "Diagnostic enregistré" },
+  { title: "Réparation", Icon: Wrench, action: "repair", success: "Réparation enregistrée" },
+  { title: "Contrôle qualité", Icon: BadgeCheck, action: "quality-control", success: "Contrôle qualité enregistré" },
+  { title: "Stock livrable", Icon: Package, action: "stock-entry", success: "Appareil placé en stock" },
+  { title: "Livraison", Icon: Truck, action: "delivery", success: "Livraison enregistrée" },
+];
 
-function toIso(v: FormDataEntryValue | null) {
-  return v ? new Date(String(v)).toISOString() : "";
+function Fact({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div>
+      <dt className="text-xs text-muted-foreground">{label}</dt>
+      <dd className="text-sm">{children}</dd>
+    </div>
+  );
 }
 
-function StepForm({ d, submit, busy }: { d: Dossier; submit: Submit; busy: boolean }) {
-  const faults = useLoad(() => api<Fault[]>(`/faults/?device_type=${d.device.device_type}`), [d.device.device_type]);
-  const parts = useLoad(() => api<Part[]>("/parts/"));
-  const [nParts, setNParts] = useState(0);
-
-  const onSubmit = (action: string, build: (f: FormData) => unknown) => (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    return submit(action, build(new FormData(e.currentTarget)));
-  };
-  const submitBtn = (label: string) => <Button type="submit" disabled={busy}>{busy ? "Enregistrement…" : label}</Button>;
-
-  switch (d.status) {
-    case "RECU":
+function StepSummary({ i, d }: { i: number; d: Dossier }) {
+  switch (i) {
+    case 0:
       return (
-        <form className="space-y-3" onSubmit={onSubmit("disinfection", (f) => ({
-          product: f.get("product"), comment: f.get("comment"), validated: f.get("validated") === "on" }))}>
-          <Field label="Produit / méthode"><Input name="product" /></Field>
-          <Field label="Commentaire"><Textarea name="comment" /></Field>
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" name="validated" defaultChecked className="h-4 w-4" /> Désinfection réalisée et validée
-          </label>
-          {submitBtn("Valider la désinfection")}
-        </form>
+        <dl className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
+          <Fact label="État visuel">
+            {labelOf(VISUAL_CONDITIONS, d.visual_condition)}{d.visual_state && ` · ${d.visual_state}`}
+          </Fact>
+          <Fact label="Statut biologique">{labelOf(BIOHAZARD_STATUSES, d.biohazard_status)}</Fact>
+          <Fact label="Compteur horaire (C.H)"><span className="ident">{d.hour_counter ?? "–"}</span></Fact>
+          <Fact label="Accessoires manquants">{d.missing_accessories || "Aucun signalé"}</Fact>
+          {d.commercial && <Fact label="Commercial">{d.commercial}</Fact>}
+          {d.comment && <Fact label="Commentaire">{d.comment}</Fact>}
+        </dl>
       );
-    case "DESINFECTE":
+    case 1:
+      return d.disinfection ? (
+        <p className="text-sm">
+          {d.disinfection.product || "Produit non précisé"}
+          {d.disinfection.comment && <span className="text-muted-foreground"> · {d.disinfection.comment}</span>}
+        </p>
+      ) : null;
+    case 2:
+      return d.diagnosis ? (
+        <div className="space-y-1.5 text-sm">
+          {d.diagnosis.faults.length === 0 ? (
+            <p className="text-muted-foreground">Aucune panne constatée.</p>
+          ) : (
+            <ul className="flex flex-wrap gap-1.5">
+              {d.diagnosis.faults.map((f) => (
+                <li key={f.name}
+                  className={cn("rounded-md px-2 py-1 text-xs font-medium",
+                    f.severity === "CRITIQUE" ? "bg-danger-soft text-danger"
+                      : f.severity === "MAJEURE" ? "bg-warn-soft text-warn" : "bg-muted text-muted-foreground")}>
+                  {f.name} · {f.severity.toLowerCase()}
+                </li>
+              ))}
+            </ul>
+          )}
+          {d.diagnosis.comment && <p className="text-muted-foreground">{d.diagnosis.comment}</p>}
+        </div>
+      ) : null;
+    case 3:
+      return d.repair ? (
+        <div className="space-y-1 text-sm">
+          <p>
+            Durée <strong className="tabular-nums">{d.repair.duration_minutes} min</strong>
+            {d.repair.parts_exit_document && <> · Doc PR <span className="ident">{d.repair.parts_exit_document}</span></>}
+          </p>
+          {d.repair.parts.length > 0 && (
+            <ul className="text-muted-foreground">
+              {d.repair.parts.map((p) => <li key={p.reference}>{p.quantity} × <span className="ident">{p.reference}</span> · {p.name}</li>)}
+            </ul>
+          )}
+          {d.repair.tests && <p className="text-muted-foreground">Tests : {d.repair.tests}</p>}
+        </div>
+      ) : null;
+    case 4:
       return (
-        <form className="space-y-3" onSubmit={onSubmit("diagnosis", (f) => ({
-          comment: f.get("comment"),
-          faults: (faults.data ?? []).filter((x) => f.get(`fault-${x.id}`) === "on").map((x) => ({
-            fault: x.id, severity: f.get(`sev-${x.id}`) })),
-        }))}>
-          <p className="text-sm font-medium text-slate-700">Pannes détectées</p>
-          {faults.data?.length === 0 && <p className="text-sm text-slate-500">Aucune panne au catalogue pour ce type : le Responsable SAV peut en ajouter.</p>}
-          <ul className="space-y-2">
-            {faults.data?.filter((x) => x.active).map((x) => (
-              <li key={x.id} className="flex items-center justify-between gap-3 rounded-md border border-slate-200 px-3 py-2">
-                <label className="flex items-center gap-2 text-sm"><input type="checkbox" name={`fault-${x.id}`} className="h-4 w-4" />{x.name}</label>
-                <Select name={`sev-${x.id}`} defaultValue="MAJEURE" aria-label={`Gravité ${x.name}`} className="!w-36">
-                  <option value="MINEURE">Mineure</option><option value="MAJEURE">Majeure</option><option value="CRITIQUE">Critique</option>
-                </Select>
-              </li>
-            ))}
-          </ul>
-          <Field label="Observations"><Textarea name="comment" /></Field>
-          {submitBtn("Terminer le diagnostic")}
-        </form>
+        <ul className="space-y-1.5 text-sm">
+          {d.quality_controls?.map((q) => (
+            <li key={q.id} className="flex flex-wrap items-baseline gap-x-3">
+              <strong className={q.result === "CONFORME" ? "text-ok" : "text-danger"}>
+                {q.result === "CONFORME" ? "Conforme" : "Non conforme"}
+              </strong>
+              <span className="text-xs text-muted-foreground">{fmt(q.at)}</span>
+              <span className="text-muted-foreground">
+                {[q.purity && `pureté ${q.purity} %`, q.flow_pressure,
+                  q.audible_alarm_ok === null ? "" : q.audible_alarm_ok ? "alarme OK" : "alarme non conforme"]
+                  .filter(Boolean).join(" · ")}
+              </span>
+              {q.comment && <span className="w-full text-muted-foreground">{q.comment}</span>}
+            </li>
+          ))}
+        </ul>
       );
-    case "DIAGNOSTIC_TERMINE":
-      return (
-        <form className="space-y-3" onSubmit={onSubmit("repair", (f) => ({
-          started_at: toIso(f.get("started_at")), ended_at: toIso(f.get("ended_at")),
-          tests: f.get("tests"), comment: f.get("comment"),
-          parts: Array.from({ length: nParts }, (_, i) => ({ part: Number(f.get(`part-${i}`)), quantity: Number(f.get(`qty-${i}`)) }))
-            .filter((p) => p.part),
-        }))}>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Début *"><Input type="datetime-local" name="started_at" required /></Field>
-            <Field label="Fin *"><Input type="datetime-local" name="ended_at" required /></Field>
-          </div>
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-slate-700">Pièces remplacées</p>
-            {Array.from({ length: nParts }, (_, i) => (
-              <div key={i} className="flex gap-2">
-                <Select name={`part-${i}`} aria-label="Pièce"><option value="">Choisir…</option>
-                  {parts.data?.map((p) => <option key={p.id} value={p.id}>{p.reference} · {p.name}</option>)}
-                </Select>
-                <Input type="number" name={`qty-${i}`} min={1} defaultValue={1} aria-label="Quantité" className="!w-24" />
-              </div>
-            ))}
-            <Button type="button" variant="ghost" onClick={() => setNParts(nParts + 1)}>Ajouter une pièce</Button>
-          </div>
-          <Field label="Tests effectués"><Textarea name="tests" /></Field>
-          <Field label="Commentaire"><Textarea name="comment" /></Field>
-          {submitBtn("Enregistrer la réparation")}
-        </form>
-      );
-    case "REPARE":
-      return (
-        <form className="space-y-3" onSubmit={onSubmit("quality-control", (f) => ({
-          checklist: Object.fromEntries(QC_CHECKLIST.map((i) => [i, f.get(`qc-${i}`) === "on"])),
-          comment: f.get("comment") }))}>
-          <fieldset className="grid gap-2 sm:grid-cols-2">
-            <legend className="mb-1 text-sm font-medium text-slate-700">Checklist (cocher si conforme)</legend>
-            {QC_CHECKLIST.map((i) => (
-              <label key={i} className="flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm">
-                <input type="checkbox" name={`qc-${i}`} className="h-4 w-4" />{i}
-              </label>
-            ))}
-          </fieldset>
-          <Field label="Commentaire (obligatoire si non conforme)"><Textarea name="comment" /></Field>
-          {submitBtn("Valider le contrôle")}
-        </form>
-      );
-    case "QC_VALIDE":
-      return (
-        <form className="space-y-3" onSubmit={onSubmit("stock-entry", (f) => ({ location: f.get("location") }))}>
-          <Field label="Emplacement *"><Input name="location" required /></Field>
-          {submitBtn("Placer en stock livrable")}
-        </form>
-      );
-    case "EN_STOCK":
-      return (
-        <form className="space-y-3" onSubmit={onSubmit("delivery", (f) => ({
-          recipient: f.get("recipient"), delivery_note: f.get("delivery_note"), comment: f.get("comment") }))}>
-          <Field label="Destinataire *"><Input name="recipient" required /></Field>
-          <Field label="N° de bon de livraison"><Input name="delivery_note" /></Field>
-          <Field label="Commentaire"><Textarea name="comment" /></Field>
-          {submitBtn("Enregistrer la livraison")}
-        </form>
-      );
+    case 5: {
+      const m = d.stock_movements?.find((x) => x.kind === "ENTREE");
+      return m ? <p className="text-sm">Emplacement <span className="ident font-medium">{m.location}</span></p> : null;
+    }
+    case 6:
+      return d.delivery ? (
+        <p className="text-sm">
+          {d.delivery.recipient}
+          {d.delivery.delivery_note && <> · bon <span className="ident">{d.delivery.delivery_note}</span></>}
+        </p>
+      ) : null;
     default:
-      return <p className="text-sm text-slate-600">Ce dossier est terminé.</p>;
+      return null;
   }
 }
 
@@ -132,12 +131,27 @@ export default function DossierPage() {
   const { data: d, error, reload } = useLoad(() => api<Dossier>(`/dossiers/${id}/`), [id]);
   const [actionError, setActionError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [justDone, setJustDone] = useState<number>(-1);
+
+  if (error) return <ErrorMsg error={error} />;
+  if (!d) return <ListSkeleton rows={6} />;
+
+  const statusIdx = STATUSES.findIndex((s) => s.value === d.status);
+  const current = statusIdx + 1; // étape attendue ; 7 = dossier terminé
+  const finished = current >= STEPS.length;
 
   const submit: Submit = async (action, body) => {
     setBusy(true); setActionError(null);
     try {
-      await api(`/dossiers/${id}/${action}/`, { method: "POST", json: body });
+      const before = d.status;
+      const updated = await api<Dossier>(`/dossiers/${id}/${action}/`, { method: "POST", json: body });
       reload();
+      if (updated.status !== before) {
+        setJustDone(current);
+        toast.success(STEPS[current].success);
+      } else {
+        toast.warning("Contrôle non conforme enregistré : l'appareil reste à l'étape réparation.");
+      }
     } catch (e) {
       setActionError((e as Error).message);
     } finally {
@@ -154,6 +168,7 @@ export default function DossierPage() {
     setBusy(true); setActionError(null);
     try {
       await api(`/dossiers/${id}/photos/`, { method: "POST", body: fd });
+      toast.success("Photo ajoutée");
       reload();
     } catch (err) {
       setActionError((err as Error).message);
@@ -162,89 +177,137 @@ export default function DossierPage() {
     }
   }
 
-  if (error) return <ErrorMsg error={error} />;
-  if (!d) return <p className="text-slate-600">Chargement…</p>;
+  const stamp = (i: number) => d.history?.find((h) => h.to_status === STATUSES[i].value && h.from_status !== h.to_status);
 
   return (
     <>
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <h1 className="text-xl font-bold text-slate-900">{d.reference}</h1>
-          <p className="text-sm text-slate-600">
-            <Link className="text-sky-700 underline" href={`/devices/${d.device.id}`}>{d.device.internal_code}</Link>
-            {" · "}N° série {d.device.serial_number} · {d.device.type_name}
+      <header className="space-y-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <StatusBadge status={d.status} />
+          <span className="ident text-sm text-muted-foreground">{d.reference}</span>
+        </div>
+        <h1 className="ident text-[1.75rem] font-semibold leading-tight">{d.device.serial_number}</h1>
+        <p className="text-sm text-muted-foreground">
+          {d.device.type_name}{d.device.model_name && ` · ${d.device.model_name}`}
+          {" · "}
+          <Link href={`/devices/${d.device.id}`} className="text-link hover:underline">
+            Fiche de vie <span className="ident">{d.device.internal_code}</span>
+          </Link>
+        </p>
+        {d.biohazard && (
+          <p role="note" className="flex items-center gap-2 rounded-md bg-danger-soft px-3 py-2.5 text-sm font-medium text-danger">
+            <ShieldAlert className="size-4 shrink-0" aria-hidden />
+            Risque biologique : {labelOf(BIOHAZARD_STATUSES, d.biohazard_status).toLowerCase()}. Désinfecter avant toute manipulation.
           </p>
-        </div>
-        <StatusBadge status={d.status} />
-      </div>
-      <Stepper status={d.status} />
-      {d.biohazard && <p className="rounded-md bg-red-50 px-3 py-2 text-sm font-medium text-red-800">Risque biologique signalé à la réception.</p>}
+        )}
+      </header>
 
-      <Card title={`Étape suivante : ${NEXT_STEP[d.status]}`}>
-        <ErrorMsg error={actionError} />
-        <div className="mt-2"><StepForm key={d.status} d={d} submit={submit} busy={busy} /></div>
-      </Card>
+      <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_300px]">
+        <ol className="relative" aria-label="Parcours du dossier">
+          {STEPS.map((step, i) => {
+            const done = i < current;
+            const isCurrent = i === current && !finished;
+            const at = stamp(i);
+            const last = i === STEPS.length - 1;
+            return (
+              <li key={step.title} className="relative flex gap-4 pb-8 last:pb-0" aria-current={isCurrent ? "step" : undefined}>
+                {!last && (
+                  <span aria-hidden className={cn(
+                    "absolute left-[15px] top-9 h-[calc(100%-2.25rem)] w-0.5 rounded-full transition-colors duration-300",
+                    i < current - 1 || (i === current - 1 && !finished) ? "bg-primary" : "bg-border",
+                  )} />
+                )}
+                <span aria-hidden className={cn(
+                  "z-10 grid size-8 shrink-0 place-items-center rounded-full border-2 transition-colors duration-200",
+                  done && "border-primary bg-primary text-primary-foreground",
+                  isCurrent && "border-primary bg-card text-primary",
+                  !done && !isCurrent && "border-border bg-card text-muted-foreground",
+                )}>
+                  {done ? (
+                    <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="3"
+                      strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M5 12.5l4.5 4.5L19 7.5" className={justDone === i ? "check-draw" : undefined} />
+                    </svg>
+                  ) : <step.Icon className="size-4" />}
+                </span>
 
-      <Card title="Réception">
-        <dl className="grid gap-2 text-sm sm:grid-cols-2">
-          <div><dt className="text-slate-500">Reçu le</dt><dd>{fmt(d.received_at)}</dd></div>
-          <div><dt className="text-slate-500">Commercial</dt><dd>{d.commercial || "–"}</dd></div>
-          <div><dt className="text-slate-500">État visuel</dt><dd>{d.visual_state || "–"}</dd></div>
-          <div><dt className="text-slate-500">Accessoires manquants</dt><dd>{d.missing_accessories || "–"}</dd></div>
-        </dl>
-      </Card>
+                <div className="min-w-0 flex-1 pt-0.5">
+                  <div className="flex flex-wrap items-baseline justify-between gap-x-4">
+                    <h2 className={cn("text-base font-semibold", !done && !isCurrent && "text-muted-foreground")}>
+                      {step.title}
+                    </h2>
+                    {done && (at || i === 0) && (
+                      <span className="text-xs text-muted-foreground">
+                        {fmt(at?.at ?? d.received_at)}{at?.user_name && ` · ${at.user_name}`}
+                      </span>
+                    )}
+                    {isCurrent && <span className="text-sm font-medium text-link">{NEXT_STEP[STATUSES[statusIdx].value]}</span>}
+                  </div>
 
-      {d.diagnosis && (
-        <Card title="Diagnostic">
-          <ul className="text-sm">
-            {d.diagnosis.faults.map((f) => <li key={f.name}>{f.name} <span className="text-slate-500">({f.severity.toLowerCase()})</span></li>)}
-            {d.diagnosis.faults.length === 0 && <li className="text-slate-500">Aucune panne détectée.</li>}
-          </ul>
-          {d.diagnosis.comment && <p className="mt-2 text-sm text-slate-700">{d.diagnosis.comment}</p>}
-        </Card>
-      )}
-      {d.repair && (
-        <Card title="Réparation">
-          <p className="text-sm">Durée : <strong>{d.repair.duration_minutes} min</strong></p>
-          <ul className="mt-1 text-sm">
-            {d.repair.parts.map((p) => <li key={p.reference}>{p.quantity} × {p.reference} · {p.name}</li>)}
-          </ul>
-        </Card>
-      )}
-      {!!d.quality_controls?.length && (
-        <Card title="Contrôles qualité">
-          <ul className="space-y-1 text-sm">
-            {d.quality_controls.map((q) => (
-              <li key={q.id}>{fmt(q.at)} · <strong className={q.result === "CONFORME" ? "text-emerald-700" : "text-red-700"}>
-                {q.result === "CONFORME" ? "Conforme" : "Non conforme"}</strong>{q.comment && ` · ${q.comment}`}</li>
-            ))}
-          </ul>
-        </Card>
-      )}
+                  {done && <div className="mt-2"><StepSummary i={i} d={d} /></div>}
 
-      <Card title={`Photos (${d.photos?.length ?? 0})`}>
-        <div className="flex flex-wrap gap-2">
-          {d.photos?.map((p) => (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img key={p.id} src={p.image} alt="Photo du dossier" className="h-24 w-24 rounded-md object-cover" />
-          ))}
-        </div>
-        <label className="mt-3 block text-sm">
-          <span className="mb-1 block font-medium text-slate-700">Ajouter une photo (JPEG, PNG, WebP · 5 Mo max)</span>
-          <input type="file" accept="image/jpeg,image/png,image/webp" onChange={upload} disabled={busy} />
-        </label>
-      </Card>
-
-      <Card title="Historique">
-        <ol className="space-y-2 border-l-2 border-slate-200 pl-4 text-sm">
-          {[...(d.history ?? [])].reverse().map((h) => (
-            <li key={h.id}>
-              <p className="text-xs text-slate-500">{fmt(h.at)} · {h.user_name || "—"}</p>
-              <p>{h.comment || `${h.from_status} → ${h.to_status}`}</p>
-            </li>
-          ))}
+                  {isCurrent && (
+                    <div key={d.status} className="reveal mt-3">
+                      <div>
+                        <div className="rounded-lg border border-border bg-card p-4 sm:p-5">
+                          <ErrorMsg error={actionError} />
+                          {i === 4 && (d.quality_controls?.length ?? 0) > 0 && (
+                            <div className="mb-4 rounded-md bg-warn-soft px-3 py-2 text-sm text-warn">
+                              <StepSummary i={4} d={d} />
+                            </div>
+                          )}
+                          <div className={actionError ? "mt-3" : ""}>
+                            <StepForm d={d} submit={submit} busy={busy} />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </li>
+            );
+          })}
         </ol>
-      </Card>
+
+        <aside className="space-y-8 lg:sticky lg:top-8 lg:self-start">
+          <section aria-labelledby="photos">
+            <h2 id="photos" className="mb-2 text-base font-semibold">Photos ({d.photos?.length ?? 0})</h2>
+            {(d.photos?.length ?? 0) > 0 && (
+              <ul className="mb-3 grid grid-cols-3 gap-2">
+                {d.photos?.map((p) => (
+                  <li key={p.id}>
+                    <a href={mediaUrl(p.image)} target="_blank" rel="noreferrer">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={mediaUrl(p.image)} alt="Photo du dossier" className="aspect-square w-full rounded-md object-cover" />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <label className={cn(
+              "flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-input px-3 text-sm transition-colors hover:bg-muted",
+              busy && "pointer-events-none opacity-50",
+            )}>
+              <ImagePlus className="size-4" aria-hidden />
+              Ajouter une photo
+              <input type="file" accept="image/jpeg,image/png,image/webp" onChange={upload} className="sr-only" />
+            </label>
+            <p className="mt-1.5 text-xs text-muted-foreground">JPEG, PNG ou WebP · 5 Mo maximum</p>
+          </section>
+
+          <section aria-labelledby="hist">
+            <h2 id="hist" className="mb-2 text-base font-semibold">Historique</h2>
+            <ol className="space-y-2.5 text-sm">
+              {[...(d.history ?? [])].reverse().map((h) => (
+                <li key={h.id}>
+                  <p className="text-xs text-muted-foreground">{fmt(h.at)} · {h.user_name || "—"}</p>
+                  <p>{h.comment || `${h.from_status} → ${h.to_status}`}</p>
+                </li>
+              ))}
+            </ol>
+          </section>
+        </aside>
+      </div>
     </>
   );
 }

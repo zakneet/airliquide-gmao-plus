@@ -4,7 +4,7 @@ from rest_framework.exceptions import ValidationError
 from accounts.models import User
 from inventory.models import Device
 
-from .models import (QC_CHECKLIST, DetectedFault, Delivery, Diagnosis, Disinfection, DossierSAV,
+from .models import (QC_CHECKLIST, BiohazardStatus, VisualCondition, DetectedFault, Delivery, Diagnosis, Disinfection, DossierSAV,
                      QualityControl, Repair, ReplacedPart, StatusHistory, StockMovement)
 
 S = DossierSAV.Status
@@ -40,15 +40,32 @@ def _check_prerequisite(dossier, to_status):
 
 
 @transaction.atomic
-def receive_device(*, user, serial_number, device_type, model=None, **dossier_fields):
-    """Réception : retrouve l'appareil par n° de série (ou le crée) et ouvre un dossier SAV."""
+def receive_device(*, user, serial_number, device_type, model=None, return_declaration=None,
+                   **dossier_fields):
+    """Réception : retrouve l'appareil par n° de série (ou le crée) et ouvre un dossier SAV.
+
+    Si un questionnaire de retour est fourni, il doit correspondre au numéro de série et ne
+    pas avoir déjà été reçu ; il est alors rattaché au dossier.
+    """
     serial = Device.normalize_serial(serial_number)
+    if return_declaration is not None:
+        if Device.normalize_serial(return_declaration.serial_number) != serial:
+            _fail('return_declaration', 'Le numéro de série ne correspond pas au questionnaire de retour.')
+        if DossierSAV.objects.filter(return_declaration=return_declaration).exists():
+            _fail('return_declaration', 'Ce retour a déjà été réceptionné.')
+        dossier_fields['return_declaration'] = return_declaration
     device, created = Device.objects.get_or_create(
         serial_number=serial,
         defaults={'device_type': device_type, 'model': model, 'created_by': user},
     )
     if not created and device.dossiers.exclude(status=S.LIVRE).exists():
         _fail('serial_number', 'Cet appareil a déjà un dossier SAV ouvert.')
+    # Le risque biologique est déduit des réponses : « Inconnu » est traité comme un risque.
+    dossier_fields['biohazard'] = (
+        dossier_fields.get('biohazard', False)
+        or dossier_fields.get('biohazard_status', BiohazardStatus.UNKNOWN) != BiohazardStatus.NORMAL
+        or dossier_fields.get('visual_condition') == VisualCondition.BIOHAZARD
+    )
     dossier = DossierSAV.objects.create(device=device, received_by=user, **dossier_fields)
     StatusHistory.objects.create(dossier=dossier, from_status='', to_status=dossier.status,
                                  user=user, comment='Réception')
@@ -127,20 +144,23 @@ def record_diagnosis(dossier, user, *, faults, comment=''):
 
 
 @transaction.atomic
-def record_repair(dossier, user, *, started_at, ended_at, parts=(), tests='', comment=''):
+def record_repair(dossier, user, *, started_at, ended_at, parts=(), tests='', comment='',
+                  parts_exit_document=''):
     dossier = _lock(dossier)
     _require_status(dossier, S.DIAGNOSTIC_TERMINE, 'La réparation')
     if ended_at <= started_at:
         _fail('ended_at', 'La fin doit être postérieure au début.')
     repair = Repair.objects.create(dossier=dossier, technician=user, started_at=started_at,
-                                   ended_at=ended_at, tests=tests, comment=comment)
+                                   ended_at=ended_at, tests=tests, comment=comment,
+                                   parts_exit_document=parts_exit_document)
     for p in parts:
         ReplacedPart.objects.create(repair=repair, part=p['part'], quantity=p.get('quantity', 1))
     return _advance(dossier, S.REPARE, user, 'Réparation terminée')
 
 
 @transaction.atomic
-def record_quality_control(dossier, user, *, checklist, comment=''):
+def record_quality_control(dossier, user, *, checklist, comment='', purity=None, flow_pressure='',
+                           audible_alarm_ok=None):
     dossier = _lock(dossier)
     _require_status(dossier, S.REPARE, 'Le contrôle qualité')
     unknown = set(checklist) - set(QC_CHECKLIST)
@@ -152,7 +172,8 @@ def record_quality_control(dossier, user, *, checklist, comment=''):
     if not ok and not comment.strip():
         _fail('comment', 'Un commentaire est obligatoire en cas de non-conformité.')
     QualityControl.objects.create(dossier=dossier, technician=user, checklist=checklist,
-                                  result=result, comment=comment)
+                                  result=result, comment=comment, purity=purity,
+                                  flow_pressure=flow_pressure, audible_alarm_ok=audible_alarm_ok)
     if ok:
         return _advance(dossier, S.QC_VALIDE, user, 'Contrôle qualité conforme')
     StatusHistory.objects.create(dossier=dossier, from_status=dossier.status,

@@ -48,7 +48,7 @@ Frontend
 - Next.js
 - TypeScript
 - Tailwind CSS
-- Interface Tailwind (composants maison ; shadcn/ui prévu)
+- shadcn/ui (voir `frontend/DESIGN.md`)
 
 Mobile
 
@@ -60,6 +60,7 @@ Mobile
 
 - [Démarrage local](docs/08_DEMARRAGE.md)
 - [API REST](docs/07_API.md)
+- [Questionnaire de retour et journal](docs/09_QUESTIONNAIRE_ET_JOURNAL.md)
 - [Workflow](docs/03_WORKFLOW.md) · [Base de données](docs/06_BASE_DE_DONNEES.md)
 
 ---

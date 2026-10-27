@@ -1,26 +1,234 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* Thème clair uniquement : les variantes dark: des composants shadcn ne suivent pas le système. */
+@custom-variant dark (&:is(.dark *));
+
+/*
+  Jetons de design : voir frontend/DESIGN.md.
+  Monde visuel : banc d'atelier médical. Encre bleue, papier froid, états en libellé + icône.
+*/
 
 @theme inline {
+  --font-sans: var(--font-plex-sans), system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+  --font-heading: var(--font-sans);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-link: var(--link);
+  --color-ink: var(--ink);
+  --color-ink-foreground: var(--ink-foreground);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-active: var(--ink-active);
+  --color-bar: var(--bar);
+
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+:root {
+  --font-plex-sans: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+  --font-plex-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --radius: 8px;
+
+  /* Surfaces et encre */
+  --background: oklch(0.975 0.006 250);
+  --foreground: oklch(0.22 0.035 258);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.22 0.035 258);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.22 0.035 258);
+
+  /* Action principale et liens */
+  --primary: oklch(0.38 0.125 258);
+  --primary-foreground: oklch(0.99 0 0);
+  --link: oklch(0.45 0.15 258);
+  --secondary: oklch(0.955 0.01 250);
+  --secondary-foreground: oklch(0.28 0.04 258);
+  --muted: oklch(0.955 0.008 250);
+  --muted-foreground: oklch(0.46 0.025 255);
+  --accent: oklch(0.93 0.03 250);
+  --accent-foreground: oklch(0.3 0.09 258);
+  --destructive: oklch(0.5 0.19 27);
+  --border: oklch(0.9 0.01 250);
+  --input: oklch(0.8 0.015 250);
+  --ring: oklch(0.55 0.15 258);
+
+  /* Navigation (encre foncée) */
+  --ink: oklch(0.2 0.05 258);
+  --ink-foreground: oklch(0.96 0.01 250);
+  --ink-muted: oklch(0.75 0.03 255);
+  --ink-active: oklch(0.31 0.085 258);
+
+  /* Données : une seule teinte pour une magnitude (voir dataviz) */
+  --bar: oklch(0.5 0.14 258);
+
+  /* États métier : toujours associés à un libellé et une icône. */
+  --ok: oklch(0.42 0.1 155);
+  --ok-soft: oklch(0.95 0.04 155);
+  --warn: oklch(0.45 0.1 70);
+  --warn-soft: oklch(0.96 0.05 90);
+  --danger: oklch(0.45 0.17 27);
+  --danger-soft: oklch(0.95 0.035 25);
+  --info: oklch(0.4 0.1 258);
+  --info-soft: oklch(0.94 0.03 250);
+
+  /* Mouvement (Emil Kowalski) : ease-out marqué, jamais ease-in. */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+    scrollbar-color: oklch(0.75 0.02 250) transparent;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-size: 16px;
+    line-height: 1.55;
+    font-feature-settings: "tnum" 1, "ss01" 0;
+  }
+  h1, h2, h3 {
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+  }
+  p, li { text-wrap: pretty; }
+
+  /* Surfaces du navigateur : sélection, curseur, focus, soulignement. */
+  ::selection {
+    background: oklch(0.86 0.07 250);
+    color: oklch(0.2 0.05 258);
+  }
+  input, textarea, select { caret-color: var(--primary); }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  a { text-underline-offset: 3px; text-decoration-thickness: 1px; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb {
+    background: oklch(0.78 0.02 250);
+    border-radius: 10px;
+    border: 2px solid var(--background);
+  }
+  ::-webkit-scrollbar-thumb:hover { background: oklch(0.65 0.04 255); }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-delay: 0ms !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Identifiants (n° de série, codes) : chiffres alignés, lisibles à distance. */
+.ident {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  font-size: 0.94em;
+}
+
+/* ---- Mouvement : un moment signé par écran, le reste est de la réponse à l'action ---- */
+
+/* Barres de charge de l'atelier : elles montent depuis la ligne de base, une fois. */
+@keyframes bar-rise {
+  from { clip-path: inset(100% 0 0 0); }
+  to   { clip-path: inset(0 0 0 0); }
+}
+.bar-rise {
+  animation: bar-rise 640ms var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 55ms);
+}
+
+/* Validation d'une étape : le tracé de la coche se dessine. */
+@keyframes check-draw {
+  from { stroke-dashoffset: 24; }
+  to   { stroke-dashoffset: 0; }
+}
+.check-draw {
+  stroke-dasharray: 24;
+  animation: check-draw 360ms var(--ease-out) 80ms both;
+}
+
+/* Ouverture du contenu d'une étape : hauteur animée par grille (sans mesurer). */
+.reveal {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 280ms var(--ease-out), opacity 220ms var(--ease-out);
+}
+.reveal > div { overflow: hidden; min-height: 0; }
+@starting-style {
+  .reveal { grid-template-rows: 0fr; opacity: 0; }
+}
+
+/* Squelettes de chargement. */
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+.skeleton {
+  background: var(--muted);
+  border-radius: 6px;
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+/* Impression du journal : fond blanc, sans navigation. */
+@media print {
+  body { background: white; }
+  aside, nav, button { display: none !important; }
+  main { padding: 0 !important; max-width: none !important; }
+}
+
+/* Circuit de l'écran de connexion : le tracé se dessine une fois. */
+@keyframes line-draw {
+  from { stroke-dashoffset: 1; }
+  to   { stroke-dashoffset: 0; }
+}
+.line-draw {
+  stroke-dasharray: 1;
+  animation: line-draw 1400ms var(--ease-out) 150ms both;
+}
+@keyframes node-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.node-in {
+  animation: node-in 300ms var(--ease-out) both;
+  animation-delay: calc(200ms + var(--i, 0) * 170ms);
 }
