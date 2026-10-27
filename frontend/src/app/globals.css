@@ -56,6 +56,8 @@
 }
 
 :root {
+  --font-plex-sans: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+  --font-plex-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
   --radius: 8px;
 
   /* Surfaces et encre */
