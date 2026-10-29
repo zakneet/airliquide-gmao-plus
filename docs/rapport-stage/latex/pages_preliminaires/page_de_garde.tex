@@ -1,0 +1,47 @@
+% =====================================================================
+%  Page de garde
+% =====================================================================
+\begin{titlepage}
+\thispagestyle{empty}
+\setstretch{1.1}
+
+\noindent
+\begin{minipage}[c]{0.27\textwidth}
+  \IfFileExists{images/logo_etablissement.png}{\includegraphics[height=2.4cm]{logo_etablissement.png}}{}
+\end{minipage}\hfill
+\begin{minipage}[c]{0.44\textwidth}
+  \centering\sffamily\footnotesize
+  République Tunisienne\\
+  Ministère de l'Enseignement Supérieur\\et de la Recherche Scientifique\\[2pt]
+  Université de Tunis El Manar\\
+  \textbf{Institut Supérieur des Technologies Médicales de Tunis}
+\end{minipage}\hfill
+\begin{minipage}[c]{0.27\textwidth}
+  \raggedleft
+  \IfFileExists{images/logo_air_liquide.png}{\includegraphics[width=4.2cm]{logo_air_liquide.png}}{}
+\end{minipage}
+
+\vspace{3.2cm}
+
+\noindent{\color{ALrouge}\rule{1.4cm}{3.5pt}}\par\vspace{0.5cm}
+{\sffamily\bfseries\large\color{ALtexte}RAPPORT DE STAGE TECHNICIEN\par}
+\vspace{0.4cm}
+{\sffamily\bfseries\fontsize{38}{42}\selectfont\color{ALbleu}AirLiquide GMAO+\par}
+\vspace{0.6cm}
+{\large\itshape\SousTitre\par}
+
+\vfill
+
+\noindent
+{\renewcommand{\arraystretch}{2.0}
+\begin{tabular}{@{}>{\sffamily\bfseries\small\color{ALbleu}}l@{\hspace{1em}}!{\color{ALrouge}\vrule width 1.2pt}@{\hspace{1em}}l@{}}
+Réalisé par & \Auteur \\
+Formation & \Formation \\
+Organisme d'accueil & \Organisme \\
+Encadrant professionnel & \EncadrantPro \\
+Période du stage & \PeriodeStage \\
+Année universitaire & \AnneeUniv \\
+\end{tabular}}
+
+\vspace{1.2cm}
+\end{titlepage}

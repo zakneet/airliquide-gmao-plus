@@ -1,0 +1,88 @@
+% =====================================================================
+%  Préambule : polices, couleurs, titres, en-têtes, tableaux, figures
+% =====================================================================
+
+% --- Langue, encodage, polices (Pagella pour le texte, Heros pour les titres, Cursor pour le code) ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{textcomp}
+\usepackage[french]{babel}
+\frenchsetup{StandardLists=true}
+\usepackage{tgpagella}
+\usepackage[scale=0.92]{tgheros}
+\usepackage[scale=0.88]{tgcursor}
+\usepackage{microtype}
+
+% --- Page ---
+\usepackage[a4paper,top=2.8cm,bottom=2.6cm,left=3cm,right=2.5cm,headheight=22pt]{geometry}
+\usepackage{setspace}
+\setstretch{1.18}
+\setlength{\parskip}{0.35em}
+\setlength{\parindent}{0pt}
+
+% --- Couleurs (charte du logo Air Liquide) ---
+\usepackage[table]{xcolor}
+\definecolor{ALbleu}{RGB}{35,72,152}
+\definecolor{ALrouge}{RGB}{214,28,52}
+\definecolor{ALgris}{RGB}{239,242,247}
+\definecolor{ALtexte}{RGB}{105,113,128}
+
+% --- Figures, tableaux, listes ---
+\usepackage{graphicx}
+\graphicspath{{images/}}
+\usepackage{float}
+\usepackage{wrapfig}
+\usepackage{needspace}
+\usepackage{booktabs}
+\usepackage{longtable}
+\setlength{\LTpre}{0.6em}
+\setlength{\LTpost}{0.6em}
+\usepackage{caption}
+\captionsetup{font={small,sf},labelfont={bf,color=ALbleu},labelsep=endash,skip=6pt}
+\captionsetup[table]{position=top,skip=5pt}
+\captionsetup[figure]{position=bottom}
+\setlength{\intextsep}{10pt plus 2pt minus 2pt}
+\usepackage{enumitem}
+\setlist{itemsep=0.2em,topsep=0.3em,parsep=0pt,leftmargin=1.4em}
+\setlist[itemize,1]{label=\textendash}
+\setlist[itemize,2]{label=\textendash}
+\usepackage{xurl}
+
+% --- Titres ---
+\usepackage{titlesec}
+\titleformat{\chapter}[hang]
+  {\sffamily\bfseries\color{ALbleu}\fontsize{25}{29}\selectfont}
+  {\color{ALrouge}\thechapter}{0.7em}{}[\vspace{5pt}{\color{ALrouge}\titlerule[1.4pt]}]
+\titleformat{name=\chapter,numberless}[hang]
+  {\sffamily\bfseries\color{ALbleu}\fontsize{25}{29}\selectfont}
+  {}{0pt}{}[\vspace{5pt}{\color{ALrouge}\titlerule[1.4pt]}]
+\titlespacing*{\chapter}{0pt}{-12pt}{28pt}
+\titleformat{\section}{\sffamily\bfseries\Large\color{ALbleu}}{\color{ALrouge}\thesection}{0.6em}{}
+\titleformat{\subsection}{\sffamily\bfseries\large}{\thesubsection}{0.6em}{}
+\titlespacing*{\section}{0pt}{18pt}{8pt}
+\titlespacing*{\subsection}{0pt}{12pt}{5pt}
+
+% --- En-têtes et pieds de page ---
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\sffamily\small\color{ALtexte}AirLiquide GMAO+}
+\fancyhead[R]{\sffamily\small\color{ALtexte}\nouppercase{\leftmark}}
+% Numéro de page centré ; il n'apparaît qu'à partir de l'introduction (\corpstrue dans main.tex)
+\newif\ifcorps\corpsfalse
+\newcommand{\numpage}{\ifcorps{\sffamily\small\color{ALtexte}\thepage}\fi}
+\fancyfoot[C]{\numpage}
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{ALrouge}\leaders\hrule height \headrulewidth\hfill}}
+\fancypagestyle{plain}{\fancyhf{}\fancyfoot[C]{\numpage}\renewcommand{\headrulewidth}{0pt}}
+
+% --- Intitulés en français ---
+\addto\captionsfrench{\renewcommand{\bibname}{Bibliographie et webographie}}
+\addto\captionsfrench{\renewcommand{\listfigurename}{Liste des figures}}
+\addto\captionsfrench{\renewcommand{\listtablename}{Liste des tableaux}}
+\setlength{\emergencystretch}{2em}
+
+% --- Liens ---
+\usepackage[colorlinks=true,linkcolor=ALbleu,urlcolor=ALbleu,citecolor=ALrouge]{hyperref}
+\hypersetup{pdftitle={AirLiquide GMAO+ : rapport de stage technicien},pdfauthor={Zakaria Ali Fekih Ahmed}}
+\setcounter{tocdepth}{1}

@@ -1,0 +1,28 @@
+@startuml sequence_etape
+' Enregistrement d'une étape du workflow (exemple : contrôle qualité)
+skinparam shadowing false
+participant Technicien
+participant "Navigateur\n(Next.js)" as Web
+participant "API Django REST" as API
+participant "Service métier\n(services.py)" as Svc
+database PostgreSQL as DB
+
+Technicien -> Web : remplit et valide le formulaire
+Web -> API : POST /api/dossiers/{id}/quality-control/ (JWT)
+API -> API : authentification, rôle, validation des champs
+group transaction atomique
+  API -> Svc : record_quality_control(dossier, user, ...)
+  Svc -> DB : SELECT ... FOR UPDATE (verrou du dossier)
+  DB --> Svc : dossier verrouillé
+  Svc -> Svc : statut attendu REPARE, checklist complète
+  Svc -> DB : INSERT QualityControl
+  alt contrôle conforme
+    Svc -> DB : UPDATE statut = QC_VALIDE ; INSERT StatusHistory
+  else non conforme
+    Svc -> DB : INSERT StatusHistory (statut inchangé, commentaire obligatoire)
+  end
+end
+Svc --> API : dossier mis à jour
+API --> Web : 200 + dossier (JSON)
+Web --> Technicien : notification, étape suivante affichée
+@enduml

@@ -1,0 +1,62 @@
+erDiagram
+    USER ||--o{ DOSSIER_SAV : "reçoit"
+    USER ||--o{ STATUS_HISTORY : "réalise"
+    DEVICE_TYPE ||--o{ DEVICE_MODEL : "classe"
+    BRAND ||--o{ DEVICE_MODEL : "fabrique"
+    DEVICE_TYPE ||--o{ DEVICE : "type de"
+    DEVICE_MODEL |o--o{ DEVICE : "modèle de"
+    DEVICE ||--o{ DOSSIER_SAV : "a pour retours"
+    RETURN_DECLARATION |o--o| DOSSIER_SAV : "annonce"
+    DOSSIER_SAV ||--o{ STATUS_HISTORY : "historique"
+    DOSSIER_SAV ||--o| DISINFECTION : "comprend"
+    DOSSIER_SAV ||--o| DIAGNOSIS : "comprend"
+    DOSSIER_SAV ||--o| REPAIR : "comprend"
+    DOSSIER_SAV ||--o{ QUALITY_CONTROL : "comprend"
+    DOSSIER_SAV ||--o{ STOCK_MOVEMENT : "génère"
+    DOSSIER_SAV ||--o| DELIVERY : "se termine par"
+    DOSSIER_SAV ||--o{ PHOTO : "contient"
+    DIAGNOSIS ||--o{ DETECTED_FAULT : "constate"
+    FAULT ||--o{ DETECTED_FAULT : "référencée par"
+    DEVICE_TYPE ||--o{ FAULT : "catalogue"
+    REPAIR ||--o{ REPLACED_PART : "utilise"
+    PART ||--o{ REPLACED_PART : "référencée par"
+
+    DEVICE {
+        string serial_number UK
+        string internal_code UK
+        datetime created_at
+    }
+    DOSSIER_SAV {
+        string reference UK
+        string status
+        boolean biohazard
+        string biohazard_status
+        string visual_condition
+        decimal hour_counter
+        datetime received_at
+    }
+    RETURN_DECLARATION {
+        string return_id UK
+        string serial_number
+        string visual_condition
+        string biohazard_status
+        string missing_accessories
+    }
+    STATUS_HISTORY {
+        string from_status
+        string to_status
+        string comment
+        datetime at
+    }
+    QUALITY_CONTROL {
+        json checklist
+        string result
+        decimal purity
+        string flow_pressure
+        boolean audible_alarm_ok
+    }
+    REPAIR {
+        datetime started_at
+        datetime ended_at
+        string parts_exit_document
+    }

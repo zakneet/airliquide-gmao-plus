@@ -1,0 +1,15 @@
+\chapter*{Résumé}
+\markboth{Résumé}{Résumé}
+
+Ce rapport présente le stage de technicien effectué du 1\textsuperscript{er} juillet au 1\textsuperscript{er} août 2026 au sein du service Maintenance d'Air Liquide Tunisie, consacré aux équipements médicaux respiratoires (concentrateurs d'oxygène, appareils de ventilation non invasive et de pression positive continue). Les opérations de maintenance y étaient notées sur papier pendant la journée, puis reportées en fin de journée dans un classeur Google Sheets, ce qui entraînait une double saisie, une recherche lente et une traçabilité limitée.
+
+L'objectif du stage était de concevoir et de réaliser AirLiquide GMAO+, une application web qui suit chaque appareil de son retour à sa livraison : réception, désinfection, diagnostic, réparation, contrôle qualité, stock et livraison. Le travail a comporté l'analyse de l'existant, la conception (workflow, modèle de données, architecture), puis la réalisation d'une API Django REST Framework, d'une base PostgreSQL et d'une interface Next.js. Chaque appareil dispose d'une fiche de vie unique, l'historique des statuts est immuable et les transitions sont contrôlées par des règles métier. Une suite de 49 tests automatisés valide ces règles, et l'application a été testée par des techniciens du service, qui l'ont validée.
+
+\textbf{Mots-clés :} GMAO, maintenance, dispositifs médicaux, traçabilité, service après-vente, application web, Django, Next.js.
+
+\section*{Abstract}
+
+This report describes a technician internship carried out from 1 July to 1 August 2026 in the Maintenance / Maintenance department of Air Liquide Tunisia, which handles respiratory medical equipment. Maintenance work was recorded on paper and transferred to a shared spreadsheet at the end of each day, causing double entry and limited traceability. The internship aimed at designing and building AirLiquide GMAO+, a web application that follows each device from return to delivery (reception, disinfection, diagnosis, repair, quality control, stock and delivery). The solution relies on a Django REST Framework API, a PostgreSQL database and a Next.js interface. Each device has a single life record, the status history is immutable and workflow transitions are enforced by business rules, which 49 automated tests verify. The application was tested and validated by technicians of the department.
+
+\textbf{Keywords:} CMMS, maintenance, medical devices, traceability, after-sales service, web application, Django, Next.js.
+
