@@ -1,0 +1,22 @@
+@startuml workflow
+' Diagramme d'états d'un dossier SAV (voir maintenance/services.py)
+skinparam shadowing false
+hide empty description
+
+[*] --> RECU
+RECU --> DESINFECTE : désinfection validée
+DESINFECTE --> DIAGNOSTIC_TERMINE : diagnostic enregistré
+DIAGNOSTIC_TERMINE --> REPARE : réparation enregistrée
+REPARE --> REPARE : contrôle non conforme\n(commentaire obligatoire)
+REPARE --> QC_VALIDE : contrôle conforme
+QC_VALIDE --> EN_STOCK : entrée en stock
+EN_STOCK --> LIVRE : livraison enregistrée
+LIVRE --> [*]
+
+note bottom of REPARE
+  Retour arrière d'une étape :
+  Responsable SAV uniquement,
+  commentaire obligatoire.
+  Un dossier LIVRE ne se rouvre pas.
+end note
+@enduml

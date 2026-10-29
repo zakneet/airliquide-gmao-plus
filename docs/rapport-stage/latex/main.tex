@@ -1,0 +1,50 @@
+% =====================================================================
+%  Rapport de stage technicien : AirLiquide GMAO+ (Air Liquide Tunisie, juillet 2026)
+%  Fichier principal à compiler : main.tex (compilateur pdfLaTeX, deux passes).
+% =====================================================================
+\documentclass[11pt,a4paper,oneside]{report}
+
+\input{config/preambule}
+
+% ---------------------------------------------------------------------
+%  Informations de la page de garde
+% ---------------------------------------------------------------------
+\newcommand{\Auteur}{Zakaria Ali FEKIH AHMED}
+\newcommand{\Formation}{Cycle ingénieur en Génie Biomédical, parcours TTIS}
+\newcommand{\Organisme}{Air Liquide Tunisie, service Maintenance}
+\newcommand{\EncadrantPro}{M. Marouane HASSAN, responsable génie biomédical}
+\newcommand{\PeriodeStage}{du 1\textsuperscript{er} juillet au 1\textsuperscript{er} août 2026}
+\newcommand{\AnneeUniv}{2025/2026}
+\newcommand{\SousTitre}{Conception et réalisation d'une application web de gestion de la maintenance et du service après-vente des dispositifs médicaux respiratoires}
+
+\begin{document}
+
+% ---------- Pages préliminaires (non numérotées : la numérotation commence à l'introduction) ----------
+\pagenumbering{roman}
+\input{pages_preliminaires/page_de_garde}
+\input{pages_preliminaires/remerciements}
+\input{pages_preliminaires/resume}
+
+\tableofcontents
+\clearpage
+\listoffigures
+\clearpage
+\listoftables
+\clearpage
+\input{pages_preliminaires/abreviations}
+
+% ---------- Corps du rapport : chiffres arabes, numérotation à partir de l'introduction ----------
+\clearpage
+\corpstrue
+\pagenumbering{arabic}
+\input{chapitres/introduction}
+\input{chapitres/ch1_entreprise}
+\input{chapitres/ch2_contexte}
+\input{chapitres/ch3_travaux}
+\input{chapitres/ch4_resultats}
+\input{chapitres/conclusion}
+
+\input{bibliographie}
+\input{chapitres/annexes}
+
+\end{document}

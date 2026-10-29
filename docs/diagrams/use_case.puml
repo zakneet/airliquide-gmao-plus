@@ -1,0 +1,48 @@
+@startuml use_case
+' Diagramme de cas d'utilisation : AirLiquide GMAO+
+left to right direction
+skinparam shadowing false
+skinparam packageStyle rectangle
+
+actor "Technicien" as T
+actor "Responsable SAV" as R
+R --|> T
+
+rectangle "AirLiquide GMAO+" {
+  usecase "S'authentifier" as UC1
+  usecase "Annoncer un retour" as UC2
+  usecase "Réceptionner un appareil" as UC3
+  usecase "Désinfecter l'appareil" as UC4
+  usecase "Réaliser le diagnostic" as UC5
+  usecase "Enregistrer la réparation" as UC6
+  usecase "Effectuer le contrôle qualité" as UC7
+  usecase "Mettre en stock et livrer" as UC8
+  usecase "Consulter la fiche de vie" as UC9
+  usecase "Consulter le journal\net le tableau de bord" as UC10
+  usecase "Reprendre le questionnaire\nde retour" as UC11
+  usecase "Joindre des photos" as UC12
+  usecase "Vérifier les prérequis\nde l'étape" as UC13
+  usecase "Gérer utilisateurs\net catalogues" as UC14
+  usecase "Exporter les rapports CSV" as UC15
+}
+
+T --> UC1
+T --> UC2
+T --> UC3
+T --> UC4
+T --> UC5
+T --> UC6
+T --> UC7
+T --> UC8
+T --> UC9
+T --> UC10
+R --> UC14
+R --> UC15
+
+UC11 .> UC3 : <<extend>>
+UC12 .> UC6 : <<extend>>
+UC4 .> UC13 : <<include>>
+UC5 .> UC13 : <<include>>
+UC7 .> UC13 : <<include>>
+UC8 .> UC13 : <<include>>
+@enduml

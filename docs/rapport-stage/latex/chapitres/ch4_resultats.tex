@@ -1,0 +1,107 @@
+\chapter{Résultats obtenus et bilan}
+
+\section{Tests réalisés}
+
+La suite de tests automatisés du backend comprend \textbf{49 tests, tous réussis} lors de l'exécution du 28 octobre 2026 (environnement SQLite). Les mêmes tests avaient également réussi sur PostgreSQL 16 au cours du développement.
+
+\Needspace{12\baselineskip}
+
+{\small\setstretch{1.05}\renewcommand{\arraystretch}{1.3}\arrayrulecolor{ALtexte}
+\begin{longtable}{|>{\raggedright\arraybackslash}p{4.00cm}|>{\raggedright\arraybackslash}p{2.23cm}|>{\raggedright\arraybackslash}p{8.01cm}|}
+\caption{Répartition des tests automatisés du backend (total : 49)}\\
+\hline
+\rowcolor{ALbleu} \sffamily\bfseries\color{white} Thème & \sffamily\bfseries\color{white} Nombre de tests & \sffamily\bfseries\color{white} Ce qui est vérifié \\ \hline
+\endfirsthead
+\caption[]{Répartition des tests automatisés du backend (total : 49) (suite)}\\
+\hline
+\rowcolor{ALbleu} \sffamily\bfseries\color{white} Thème & \sffamily\bfseries\color{white} Nombre de tests & \sffamily\bfseries\color{white} Ce qui est vérifié \\ \hline
+\endhead
+Authentification et permissions & 12 & Connexion, refus d'accès, droits par rôle, cookie HttpOnly, renouvellement, déconnexion, limitation du débit \\ \hline
+\rowcolor{ALgris} Réception et transitions & 10 & Création de l'appareil, doublons, saut d'étape interdit, retour arrière réservé, historique immuable \\ \hline
+Étapes du workflow & 11 & Cycle complet, fiche de vie unique, ordre des étapes, contrôle non conforme, livraison sans stock \\ \hline
+\rowcolor{ALgris} Photos & 3 & Image valide, fichier non image, type non autorisé \\ \hline
+Questionnaire de retour & 7 & Création, identifiant unique, rattachement à la réception, double réception, incohérence de série, risque biologique \\ \hline
+\rowcolor{ALgris} Journal et indicateurs & 6 & Colonnes du journal, filtres, export CSV, pureté hors limites, tableau de bord, accès aux rapports \\ \hline
+\end{longtable}
+}
+
+Côté frontend, aucun test automatisé n'a été écrit : les contrôles disponibles sont la vérification des types TypeScript, l'analyse statique (lint) sans erreur et la compilation de production, complétés par des captures d'écran et des essais manuels. C'est une limite assumée de ce travail (§ 4.5).
+
+\section{Résultats fonctionnels}
+
+Le tableau suivant confronte les fonctionnalités à leur niveau de vérification.
+
+\Needspace{15\baselineskip}
+
+{\small\setstretch{1.05}\renewcommand{\arraystretch}{1.3}\arrayrulecolor{ALtexte}
+\begin{longtable}{|>{\raggedright\arraybackslash}p{8.22cm}|>{\raggedright\arraybackslash}p{6.39cm}|}
+\caption{Niveau de vérification des fonctionnalités}\\
+\hline
+\rowcolor{ALbleu} \sffamily\bfseries\color{white} Fonctionnalité & \sffamily\bfseries\color{white} Niveau de vérification \\ \hline
+\endfirsthead
+\caption[]{Niveau de vérification des fonctionnalités (suite)}\\
+\hline
+\rowcolor{ALbleu} \sffamily\bfseries\color{white} Fonctionnalité & \sffamily\bfseries\color{white} Niveau de vérification \\ \hline
+\endhead
+Authentification, rôles, limitation de débit & Implémentée, testée automatiquement \\ \hline
+\rowcolor{ALgris} Fiche de vie unique, dossier unique ouvert & Implémentée, testée automatiquement \\ \hline
+Workflow à 7 statuts et prérequis & Implémentée, testée automatiquement \\ \hline
+\rowcolor{ALgris} Historique immuable & Implémentée, testée automatiquement \\ \hline
+Désinfection, diagnostic, réparation, contrôle qualité, stock, livraison & Implémentée, testée automatiquement \\ \hline
+\rowcolor{ALgris} Questionnaire de retour, journal de maintenance, exports CSV & Implémentée, testée automatiquement \\ \hline
+Interface web (16 écrans, version mobile adaptée) & Implémentée, vérifiée par compilation, lint et captures \\ \hline
+\rowcolor{ALgris} Rapports PDF, maintenance préventive, application mobile & Non réalisées \\ \hline
+\end{longtable}
+}
+
+\section{Validation par les utilisateurs}
+
+L'application a été testée par les techniciens du service, Fares et Maher, qui l'ont validée.
+
+\Needspace{18\baselineskip}
+\section{Difficultés rencontrées et solutions apportées}
+
+{\small\setstretch{1.05}\renewcommand{\arraystretch}{1.3}\arrayrulecolor{ALtexte}
+\begin{longtable}{|>{\raggedright\arraybackslash}p{6.85cm}|>{\raggedright\arraybackslash}p{7.76cm}|}
+\caption{Principales difficultés techniques et solutions}\\
+\hline
+\rowcolor{ALbleu} \sffamily\bfseries\color{white} Difficulté & \sffamily\bfseries\color{white} Solution apportée \\ \hline
+\endfirsthead
+\caption[]{Principales difficultés techniques et solutions (suite)}\\
+\hline
+\rowcolor{ALbleu} \sffamily\bfseries\color{white} Difficulté & \sffamily\bfseries\color{white} Solution apportée \\ \hline
+\endhead
+Le modèle initial à entité unique \og{}Machine\fg{} ne distinguait pas l'appareil de ses retours & Séparation en appareil (fiche de vie) et dossier SAV, avec contrainte d'un seul dossier ouvert \\ \hline
+\rowcolor{ALgris} Éviter les transitions incohérentes (par exemple livrer sans contrôle) & Services transactionnels : chaque étape vérifie le statut attendu et ses prérequis ; tests dédiés \\ \hline
+Stockage des jetons dans le navigateur exposé aux scripts malveillants & Jeton de rafraîchissement en cookie HttpOnly, jeton d'accès en mémoire, limitation des tentatives \\ \hline
+\rowcolor{ALgris} Erreur \og{}inconnue\fg{} affichée alors que la base n'était pas à jour (migration non appliquée) & Messages d'erreur explicites côté interface (serveur injoignable, erreur interne, migrations) \\ \hline
+Polices téléchargées depuis un service externe, indisponibles sans réseau & Polices installées localement avec le projet (paquets \texttt{@fontsource}) \\ \hline
+\rowcolor{ALgris} Contraintes d'une version récente de Next.js sur le rendu dynamique & Réorganisation de la mise en page (suspension du rendu) et contenu toujours rendu \\ \hline
+Environnement Docker instable sur le poste de développement & Démarrage de Docker Desktop, base SQLite de repli, validation sur les deux bases \\ \hline
+\end{longtable}
+}
+
+\section{Limites du travail}
+
+\begin{itemize}
+  \item pas de \textbf{rapports PDF} (exports CSV uniquement), alors que le cahier des charges les mentionnait ;
+  \item pas de \textbf{maintenance préventive} ni de suivi des interventions correctives, pourtant présents dans le classeur existant (onglets PM\_\allowbreak{}LOG et CM\_\allowbreak{}LOG), ni de type de service ou de propriété de l'appareil ;
+  \item \textbf{aucun test automatisé du frontend} ;
+  \item l'exigence de \textbf{saisie en moins d'une minute} n'a pas été mesurée ;
+  \item pas d'écran d'administration des utilisateurs et des catalogues (disponibles par l'API et l'administration Django) ;
+  \item pas d'\textbf{application mobile}, pas de déploiement documenté en production ;
+  \item les captures du rapport utilisent des données de démonstration et ne reflètent pas des volumes réels.
+\end{itemize}
+
+\section{Perspectives}
+
+\begin{itemize}
+  \item génération de \textbf{rapports PDF} et de statistiques avancées ;
+  \item intégration de la \textbf{maintenance préventive} (dates de prochain service) et des types de service du classeur ;
+  \item \textbf{import des données existantes} du classeur Google Sheets ;
+  \item \textbf{application mobile} Flutter connectée à la même API ;
+  \item conteneurisation complète, intégration continue et déploiement sécurisé ;
+  \item tests automatisés de bout en bout du frontend ;
+  \item étiquettes \textbf{QR code} pour retrouver un appareil par lecture.
+\end{itemize}
+

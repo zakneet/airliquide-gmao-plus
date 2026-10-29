@@ -1,0 +1,26 @@
+@startuml sequence_reception
+' Réception d'un appareil à partir d'un retour annoncé
+skinparam shadowing false
+participant Technicien
+participant "Navigateur\n(Next.js)" as Web
+participant "API Django REST" as API
+participant "Service métier" as Svc
+database PostgreSQL as DB
+
+Technicien -> Web : choisit le retour annoncé
+Web -> API : GET /api/returns/?pending=1
+API -> DB : lecture des annonces non réceptionnées
+API --> Web : liste des annonces
+Technicien -> Web : vérifie l'état, saisit le compteur horaire
+Web -> API : POST /api/dossiers/reception/
+API -> Svc : receive_device(...)
+group transaction atomique
+  Svc -> DB : appareil par numéro de série (création si absent)
+  Svc -> Svc : refuse si un dossier est déjà ouvert\nou si la série ne correspond pas à l'annonce
+  Svc -> DB : INSERT DossierSAV (biohazard déduit des réponses)
+  Svc -> DB : INSERT StatusHistory (réception)
+end
+Svc --> API : dossier
+API --> Web : 201 + dossier
+Web --> Technicien : dossier affiché, étape suivante : désinfection
+@enduml
