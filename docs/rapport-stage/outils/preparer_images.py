@@ -78,10 +78,11 @@ save(j.crop((140, 0, 1250, 718)), "journal_papier.jpg")
 # --- classeur Google Sheets : colonne des numéros de série floutée
 r = Image.open(SHEETS / "1.jpg").convert("RGB")
 r = blur(r, (385, 340, 640, 600), 22)
-save(r.crop((385, 250, 2230, 950)), "classeur_retours.jpg", 1800)  # colonne des horodatages exclue
+# fond clair (inversion du thème sombre de Google Sheets) pour limiter l'encre à l'impression
+save(ImageOps.invert(r.crop((385, 250, 2230, 950))), "classeur_retours.jpg", 1800)  # colonne des horodatages exclue
 m = Image.open(SHEETS / "2.jpg").convert("RGB")
 m = blur(m, (680, 330, 885, 510), 22)
-save(m.crop((360, 250, 2230, 950)), "classeur_journal.jpg", 1800)
+save(ImageOps.invert(m.crop((360, 250, 2230, 950))), "classeur_journal.jpg", 1800)
 
 # --- montages d'équipements
 comp = blur(blur(load(10), (670, 420, 930, 550), 16), (1330, 250, 1480, 460), 16)  # étiquettes de série des pièces

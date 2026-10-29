@@ -134,7 +134,11 @@ class LatexRapport:
         elif t == "Annexes":
             self.mode = "annex"
             self._open("chapitres/annexes.tex")
-            self._w("\\appendix\n\\setlength{\\emergencystretch}{2em}\n\n")
+            # toutes les annexes à la suite, sans saut de page entre elles ; tableaux et figures numérotés A.1, A.2…
+            self._w("\\chapter*{Annexes}\n\\addcontentsline{toc}{chapter}{Annexes}\n\\markboth{Annexes}{Annexes}\n"
+                    "\\setcounter{table}{0}\\setcounter{figure}{0}\n"
+                    "\\renewcommand{\\thetable}{A.\\arabic{table}}\\renewcommand{\\thefigure}{A.\\arabic{figure}}\n"
+                    "\\setlength{\\emergencystretch}{2em}\n\n")
         elif t.startswith("Bibliographie"):
             self.mode = "bib"
             self._open("bibliographie.tex")
@@ -144,8 +148,8 @@ class LatexRapport:
     def h2(self, text):
         t = text.strip()
         if self.mode == "annex":
-            m = re.match(r"Annexe [A-Z] : (.+)", t)
-            self._w(f"\\clearpage\n\\chapter{{{self.inline(m.group(1))}}}\n\n")
+            title = self.inline(t)
+            self._w(f"\\section*{{{title}}}\n\\addcontentsline{{toc}}{{section}}{{{title}}}\n\n")
         elif self.mode == "prelim":
             self._w(f"\\section*{{{self.inline(t)}}}\n\n")
         else:
@@ -185,15 +189,14 @@ class LatexRapport:
         name = Path(path).name
         cap = self.inline(caption)
         if landscape:
+            # flottant de page entière : LaTeX le place seul sur une page, centré verticalement,
+            # et remplit les pages précédentes avec le texte qui suit (pas de page à moitié vide)
             lines = [
-                "\\clearpage",
-                "\\vspace*{\\fill}",
-                "\\begin{center}",
-                f"\\includegraphics[width={TEXT_W_CM:.1f}cm,height=19.5cm,keepaspectratio]{{{name}}}\\par\\medskip",
-                f"\\captionof{{figure}}{{{cap}}}",
-                "\\end{center}",
-                "\\vspace*{\\fill}",
-                "\\clearpage",
+                "\\begin{figure}[p]",
+                "\\centering",
+                f"\\includegraphics[width={TEXT_W_CM:.1f}cm,height=18.5cm,keepaspectratio]{{{name}}}",
+                f"\\caption{{{cap}}}",
+                "\\end{figure}",
             ]
         else:
             w, h = min(width_cm, TEXT_W_CM), max_height_cm
@@ -238,8 +241,16 @@ class LatexRapport:
         self.tab += 1
         fs = "\\footnotesize" if size < 9 else "\\small"
         cap = self.inline(caption)
+        # Needspace est placé AVANT le titre qui précède le tableau, pour ne pas laisser un titre orphelin
+        need = min(int(1.6 * len(rows)) + 3, 18)
+        heading = None
+        buf = self.files.get(self.cur)
+        if buf and buf[-1].startswith(("\\section", "\\subsection")):
+            heading = buf.pop()
+            need += 4
         lines = [
-            "\\Needspace{%d\\baselineskip}" % min(2 * len(rows) + 4, 22),
+            "\\Needspace{%d\\baselineskip}" % need,
+            heading.rstrip("\n") + "\n" if heading else "",
             "{" + fs + "\\setstretch{1.05}" + grid,
             "\\begin{longtable}{" + spec + "}",
             f"\\caption{{{cap}}}\\\\",

@@ -12,7 +12,8 @@ Le travail a suivi une démarche en trois temps : (1) documenter le besoin avant
 
 Le déroulement du projet est reconstitué à partir des observations du stage et de l'historique du dépôt Git.
 
-\Needspace{10\baselineskip}
+\Needspace{7\baselineskip}
+
 {\small\setstretch{1.05}\renewcommand{\arraystretch}{1.3}\arrayrulecolor{ALtexte}
 \begin{longtable}{|>{\raggedright\arraybackslash}p{4.11cm}|>{\raggedright\arraybackslash}p{10.50cm}|}
 \caption{Déroulement du projet}\\
@@ -35,9 +36,9 @@ Conformément à une démarche transparente, il est précisé que des assistants
 
 \section{Analyse des besoins}
 
+\Needspace{10\baselineskip}
 \subsection{Acteurs}
 
-\Needspace{8\baselineskip}
 {\small\setstretch{1.05}\renewcommand{\arraystretch}{1.3}\arrayrulecolor{ALtexte}
 \begin{longtable}{|>{\raggedright\arraybackslash}p{3.56cm}|>{\raggedright\arraybackslash}p{4.00cm}|>{\raggedright\arraybackslash}p{6.67cm}|}
 \caption{Acteurs et droits}\\
@@ -53,14 +54,11 @@ Technicien de maintenance & Utilisateur principal de l'atelier & Enregistrer les
 \end{longtable}
 }
 
-\clearpage
-\vspace*{\fill}
-\begin{center}
-\includegraphics[width=15.5cm,height=19.5cm,keepaspectratio]{uml_cas_utilisation.png}\par\medskip
-\captionof{figure}{Diagramme de cas d'utilisation}
-\end{center}
-\vspace*{\fill}
-\clearpage
+\begin{figure}[p]
+\centering
+\includegraphics[width=15.5cm,height=18.5cm,keepaspectratio]{uml_cas_utilisation.png}
+\caption{Diagramme de cas d'utilisation}
+\end{figure}
 
 Le Responsable SAV hérite de tous les cas d'utilisation du technicien et dispose en plus de la gestion des utilisateurs et des catalogues et de l'export des rapports. Chaque étape du workflow inclut la vérification de ses prérequis.
 
@@ -92,16 +90,14 @@ Les diagrammes de cette section suivent la notation UML. Ils ont été dessinés
 
 Le cycle de vie d'un appareil est modélisé par sept statuts successifs. Un dossier ne peut avancer que d'une étape à la fois, et seulement si l'étape correspondante a été enregistrée.
 
-\clearpage
-\vspace*{\fill}
-\begin{center}
-\includegraphics[width=15.5cm,height=19.5cm,keepaspectratio]{uml_etats.png}\par\medskip
-\captionof{figure}{Diagramme d'états d'un dossier SAV}
-\end{center}
-\vspace*{\fill}
-\clearpage
+\begin{figure}[p]
+\centering
+\includegraphics[width=15.5cm,height=18.5cm,keepaspectratio]{uml_etats.png}
+\caption{Diagramme d'états d'un dossier SAV}
+\end{figure}
 
-\Needspace{18\baselineskip}
+\Needspace{14\baselineskip}
+
 {\small\setstretch{1.05}\renewcommand{\arraystretch}{1.3}\arrayrulecolor{ALtexte}
 \begin{longtable}{|>{\raggedright\arraybackslash}p{3.56cm}|>{\raggedright\arraybackslash}p{3.12cm}|>{\raggedright\arraybackslash}p{7.57cm}|}
 \caption{Statuts du dossier SAV et prérequis}\\
@@ -140,23 +136,17 @@ Une décision de conception importante a été de \textbf{séparer l'appareil ph
 
 Le modèle est présenté en deux diagrammes de classes : le premier montre le cœur (utilisateurs, appareils, retours et historique), le second les étapes rattachées à un dossier.
 
-\clearpage
-\vspace*{\fill}
-\begin{center}
-\includegraphics[width=15.5cm,height=19.5cm,keepaspectratio]{uml_classes_coeur.png}\par\medskip
-\captionof{figure}{Diagramme de classes : appareil, retour et historique}
-\end{center}
-\vspace*{\fill}
-\clearpage
+\begin{figure}[p]
+\centering
+\includegraphics[width=15.5cm,height=18.5cm,keepaspectratio]{uml_classes_coeur.png}
+\caption{Diagramme de classes : appareil, retour et historique}
+\end{figure}
 
-\clearpage
-\vspace*{\fill}
-\begin{center}
-\includegraphics[width=15.5cm,height=19.5cm,keepaspectratio]{uml_classes_etapes.png}\par\medskip
-\captionof{figure}{Diagramme de classes : étapes rattachées au dossier SAV}
-\end{center}
-\vspace*{\fill}
-\clearpage
+\begin{figure}[p]
+\centering
+\includegraphics[width=15.5cm,height=18.5cm,keepaspectratio]{uml_classes_etapes.png}
+\caption{Diagramme de classes : étapes rattachées au dossier SAV}
+\end{figure}
 
 Le modèle comprend 19 entités et 2 énumérations (annexe B), organisées autour de quatre groupes : utilisateurs, référentiel d'appareils (types, marques, modèles, appareils), dossier SAV et ses étapes, catalogues (pannes, pièces).
 
@@ -164,18 +154,16 @@ Le modèle comprend 19 entités et 2 énumérations (annexe B), organisées auto
 
 L'application suit une architecture client / serveur en couches, fondée sur une API REST. Le frontend ne contient aucune règle métier : il appelle l'API, qui applique les règles dans une couche de services.
 
-\clearpage
-\vspace*{\fill}
-\begin{center}
-\includegraphics[width=15.5cm,height=19.5cm,keepaspectratio]{uml_architecture.png}\par\medskip
-\captionof{figure}{Architecture d'AirLiquide GMAO+}
-\end{center}
-\vspace*{\fill}
-\clearpage
+\begin{figure}[p]
+\centering
+\includegraphics[width=15.5cm,height=18.5cm,keepaspectratio]{uml_architecture.png}
+\caption{Architecture d'AirLiquide GMAO+}
+\end{figure}
 
 La conception initiale prévoyait une architecture modulaire orientée domaine, avec un module \texttt{maintenance} regroupant tout le cycle de vie, plus des modules \texttt{accounts}, \texttt{inventory}, \texttt{reports}, \texttt{dashboard} et \texttt{common}. Ce choix a été retenu. Le tableau suivant compare la cible initiale à ce qui a été réalisé.
 
-\Needspace{18\baselineskip}
+\Needspace{14\baselineskip}
+
 {\small\setstretch{1.05}\renewcommand{\arraystretch}{1.3}\arrayrulecolor{ALtexte}
 \begin{longtable}{|>{\raggedright\arraybackslash}p{7.30cm}|>{\raggedright\arraybackslash}p{7.30cm}|}
 \caption{Architecture cible et architecture réalisée}\\
@@ -209,20 +197,17 @@ Rapports PDF, notifications, QR code & Non réalisés (perspectives) \\ \hline
 
 Le diagramme de séquence suivant détaille le cycle d'authentification : connexion, conservation du jeton d'accès en mémoire et renouvellement grâce au cookie.
 
-\clearpage
-\vspace*{\fill}
-\begin{center}
-\includegraphics[width=15.5cm,height=19.5cm,keepaspectratio]{uml_sequence_auth.png}\par\medskip
-\captionof{figure}{Diagramme de séquence : authentification et renouvellement du jeton}
-\end{center}
-\vspace*{\fill}
-\clearpage
+\begin{figure}[p]
+\centering
+\includegraphics[width=15.5cm,height=18.5cm,keepaspectratio]{uml_sequence_auth.png}
+\caption{Diagramme de séquence : authentification et renouvellement du jeton}
+\end{figure}
 
 \section{Réalisation}
 
+\Needspace{15\baselineskip}
 \subsection{Environnement technique}
 
-\Needspace{14\baselineskip}
 {\small\setstretch{1.05}\renewcommand{\arraystretch}{1.3}\arrayrulecolor{ALtexte}
 \begin{longtable}{|>{\raggedright\arraybackslash}p{3.20cm}|>{\raggedright\arraybackslash}p{11.41cm}|}
 \caption{Environnement technique (versions relevées dans les fichiers de dépendances)}\\
@@ -247,14 +232,11 @@ Le backend est organisé en applications Django. Les \textbf{vues} reçoivent la
 
 L'API expose des points d'accès REST documentés (annexe A). Les actions de workflow sont de simples \texttt{POST} sur le dossier (par exemple \texttt{/\allowbreak{}api/\allowbreak{}dossiers/\allowbreak{}\{id\}/\allowbreak{}quality-\allowbreak{}control/\allowbreak{}}), ce qui rend l'enregistrement d'une étape et le changement de statut indissociables.
 
-\clearpage
-\vspace*{\fill}
-\begin{center}
-\includegraphics[width=15.5cm,height=19.5cm,keepaspectratio]{uml_sequence_etape.png}\par\medskip
-\captionof{figure}{Diagramme de séquence : enregistrement d'une étape (contrôle qualité)}
-\end{center}
-\vspace*{\fill}
-\clearpage
+\begin{figure}[p]
+\centering
+\includegraphics[width=15.5cm,height=18.5cm,keepaspectratio]{uml_sequence_etape.png}
+\caption{Diagramme de séquence : enregistrement d'une étape (contrôle qualité)}
+\end{figure}
 
 \subsection{Le questionnaire de retour}
 

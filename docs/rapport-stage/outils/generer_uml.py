@@ -107,7 +107,14 @@ class Canvas:
         self.text((x, y + 66), label, size, anchor="c")
 
     def save(self, name):
-        self.im.save(OUT / name, dpi=(300, 300))
+        """Rogne les marges blanches : le schéma occupe toute la largeur disponible dans le rapport."""
+        from PIL import ImageChops
+        bbox = ImageChops.difference(self.im, Image.new("RGB", self.im.size, "white")).getbbox()
+        im = self.im
+        if bbox:
+            pad = 12 * S
+            im = im.crop((max(bbox[0] - pad, 0), max(bbox[1] - pad, 0), min(bbox[2] + pad, im.width), min(bbox[3] + pad, im.height)))
+        im.save(OUT / name, dpi=(300, 300))
 
 
 
